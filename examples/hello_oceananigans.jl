@@ -4,8 +4,8 @@
 #     julia --project=. examples/hello_oceananigans.jl GPU
 
 using Oceananigans
-device = isempty(ARGS) ? "CPU" : uppercase(ARGS[1])
-if device == "GPU"
+arch_name = isempty(ARGS) ? "CPU" : uppercase(ARGS[1])
+if arch_name == "GPU"
     using CUDA
     arch = GPU()
 else
@@ -13,7 +13,7 @@ else
 end
 
 grid = RectilinearGrid(arch, size = (8, 8, 8), extent = (1, 2, 3))
-@info "hello from Oceananigans on $device!"
+@info "hello from Oceananigans on $(arch_name)!"
 @show grid
 
 c = CenterField(grid)
