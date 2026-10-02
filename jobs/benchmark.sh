@@ -33,6 +33,9 @@ ARGS=(
     --device=GPU
     --output="results/${SLURM_JOB_NAME}_${SLURM_JOB_ID}.json"
 )
+if [[ -n "$DT" ]]; then
+    ARGS+=( --dt="$DT" )
+fi
 if (( NGPU > 1 )); then
     # Split in x only: Nx must be divisible by the number of GPUs.
     ARGS+=( --distributed --partition="${NGPU}x1x1" )
