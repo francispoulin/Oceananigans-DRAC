@@ -4,7 +4,17 @@ Scripts and instructions for running [Oceananigans.jl](https://github.com/CliMA/
 on the GPU clusters of the Digital Research Alliance of Canada (DRAC), including multi-GPU
 runs with CUDA-aware MPI.
 
-**Status:** draft. Nibi is being verified first; Fir, Rorqual and Trillium will follow.
+**Status:** verified on Nibi (October 2026). Fir, Rorqual and Trillium will follow.
+
+## Authors
+
+- **Francis Poulin** (University of Waterloo): direction, testing and verification on
+  DRAC clusters, and maintenance.
+- **Claude** (Anthropic's AI assistant): co-developed the scripts, checks and
+  documentation with Francis.
+
+All results in this repository, including the scaling benchmarks, were run on Nibi and
+verified by Francis.
 
 ## Quick start (Nibi)
 
