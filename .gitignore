@@ -1,0 +1,8 @@
+# Generated per cluster by setup/setup.sh: contains machine-specific paths
+LocalPreferences.toml
+
+# Job output and test files
+*.out
+*.nc
+*.jld2
+results/raw/
