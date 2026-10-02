@@ -14,8 +14,9 @@ comm = MPI.COMM_WORLD
 rank = MPI.Comm_rank(comm)
 
 mpi_libs = filter(l -> occursin(r"libmpi|libopen-pal|libopen-rte|/mca_", l), Libdl.dllist())
-foreign = filter(l -> occursin("/artifacts/", l), mpi_libs)
-
+foreign = filter(l -> occursin("/artifacts/", l) &&
+                      occursin(r"libmpi\.so|libopen-pal|libopen-rte|/mca_", l), mpi_libs)
+		 
 if rank == 0
     println("OPAL_PREFIX = ", ENV["OPAL_PREFIX"])
     println("MPI libraries and plugins loaded on rank 0:")
