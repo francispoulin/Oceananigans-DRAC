@@ -6,6 +6,12 @@
 # Used by setup/setup.sh and by every job script, so that setup and jobs always see the
 # same modules and the same Julia depot.
 
+# Remember the depot chosen by the user (first entry only) BEFORE loading modules. The julia
+# module appends empty entries to JULIA_DEPOT_PATH ("...::"), and Julia expands empty entries
+# to its default depots, including ~/.julia in $HOME. Setting the depot cleanly afterwards
+# keeps Julia to exactly one depot.
+_drac_depot="${JULIA_DEPOT_PATH%%:*}"
+
 module purge                 # some modules are "sticky" and stay loaded: that is normal
 module load StdEnv/2023
 module load gcc/12.3
@@ -17,12 +23,17 @@ module load julia/1.10.10
 export OCEANANIGANS_DRAC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Julia depot: where packages and compiled code are stored. Keep it out of $HOME (small
-# quota). Override by setting JULIA_DEPOT_PATH before sourcing this file.
+# quota). Choose another by setting JULIA_DEPOT_PATH before sourcing this file.
 # TODO (verification): check Nibi's scratch purge policy; if old files are purged, a depot
 # on $SCRATCH can silently lose packages, and a project directory is the safer default.
-export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-$SCRATCH/julia_depot}"
+export JULIA_DEPOT_PATH="${_drac_depot:-$SCRATCH/julia_depot}"
+unset _drac_depot
 
 # One CPU thread per rank is enough when the work is on the GPU.
 export JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-1}"
 
 echo "Oceananigans-DRAC environment (Nibi): repo=$OCEANANIGANS_DRAC_ROOT, depot=$JULIA_DEPOT_PATH"
+
+
+
+

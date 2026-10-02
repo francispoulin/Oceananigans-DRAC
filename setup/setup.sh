@@ -14,6 +14,15 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 source env/nibi.sh
 set -eo pipefail          # after loading modules, as module commands can return harmless errors
 
+# The system OpenMPI library. Alliance modules don't set LD_LIBRARY_PATH, so Julia can't find
+# libmpi by searching; we pass its folder explicitly.
+MPILIB_DIR="$EBROOTOPENMPI/lib"
+LIBMPI="$MPILIB_DIR/libmpi.so"
+if [[ -z "$EBROOTOPENMPI" || ! -f "$LIBMPI" ]]; then
+    echo "ERROR: cannot find the system libmpi ('$LIBMPI'). Is the openmpi module loaded?"
+    exit 1
+fi
+
 echo "== 1. Packages"
 if [[ -f Manifest.toml ]]; then
     julia --project=. -e 'using Pkg; Pkg.instantiate()'
@@ -22,15 +31,11 @@ else
                                               "OpenMPI_jll", "Preferences", "NCDatasets", "JLD2"])'
 fi
 
-echo "== 2. MPI.jl -> system OpenMPI"
-julia --project=. -e 'using MPIPreferences; MPIPreferences.use_system_binary()'
+echo "== 2. MPI.jl -> system OpenMPI ($MPILIB_DIR)"
+julia --project=. -e "using MPIPreferences
+                      MPIPreferences.use_system_binary(; extra_paths=[\"$MPILIB_DIR\"])"
 
 echo "== 3. OpenMPI_jll -> system OpenMPI library"
-LIBMPI="$EBROOTOPENMPI/lib/libmpi.so"
-if [[ -z "$EBROOTOPENMPI" || ! -f "$LIBMPI" ]]; then
-    echo "ERROR: cannot find the system libmpi ('$LIBMPI'). Is the openmpi module loaded?"
-    exit 1
-fi
 julia --project=. -e "using Preferences, OpenMPI_jll
                       set_preferences!(OpenMPI_jll, \"libmpi_path\" => \"$LIBMPI\"; force=true)"
 # The preference takes effect in a new Julia session:
