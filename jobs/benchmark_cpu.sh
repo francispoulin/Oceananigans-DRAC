@@ -5,12 +5,13 @@
 #
 #   Threads only (1 process x 192 threads):
 #     sbatch --account=def-YOURPI jobs/benchmark_cpu.sh
-#   MPI and threads (for example 48 processes x 4 threads, or 96 x 2):
+#   MPI and threads (recommended; 48 x 4 was fastest on Nibi for the 1440x720x200 grid):
 #     sbatch --account=def-YOURPI --ntasks=48 --cpus-per-task=4 jobs/benchmark_cpu.sh
-#     sbatch --account=def-YOURPI --ntasks=96 --cpus-per-task=2 jobs/benchmark_cpu.sh
 #
-# The grid is split in x only, so the number of processes must divide Nx (1440: 48 and 96 do,
-# 192 does not). A CPU node is much slower than a GPU, so the run is shortened to 2 warm-up
+# The grid is split in x only, so the number of processes must divide Nx. Each process also
+# needs at least about 23 columns: the split-explicit free surface uses a wide halo (23 for the
+# default substeps), and Oceananigans warns that results may be incorrect when a process owns
+# fewer columns than that. For Nx = 1440 this means at most about 60 processes (96 is too many). A CPU node is much slower than a GPU, so the run is shortened to 2 warm-up
 # steps and 3 windows of 10 steps (the GPU runs used 5 windows of 100).
 #SBATCH --job-name=bench_cpu
 #SBATCH --nodes=1
