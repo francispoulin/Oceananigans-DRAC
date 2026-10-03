@@ -267,13 +267,16 @@ sbatch --account=def-YOURPI --job-name=b8_gpu16 --nodes=2 --ntasks-per-node=8 --
 Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s for 1/4°,
 1/8°, 1/16° and 1/32°).
 
-## 9. Known issues
+   ## 9. Known issues, now fixed upstream
 
-- **`OPAL_PREFIX` and NetCDF** (step 7): `OpenMPI_jll` overwrites `OPAL_PREFIX` even when
-  its library is redirected. Upstream issue: TODO.
-- **GPU memory missing in distributed benchmark results:** the benchmark suite recorded
-  memory only for single-GPU runs. Pull request: TODO.
-
+   - **`OPAL_PREFIX` and NetCDF** (step 7): `OpenMPI_jll` overwrote `OPAL_PREFIX` even when its
+     library was redirected to a system OpenMPI, which crashed multi-GPU runs writing NetCDF
+     output ([Yggdrasil issue #14991](https://github.com/JuliaPackaging/Yggdrasil/issues/14991)).
+     Fixed in `OpenMPI_jll` 4.1.10.
+   - **GPU memory missing in distributed benchmark results:** the benchmark suite recorded memory
+     only for single-GPU runs. Fixed in
+     [Oceananigans pull request #6136](https://github.com/CliMA/Oceananigans.jl/pull/6136).
+     
 ## 10. Tested with
 
 | Date | Julia | Oceananigans | CUDA.jl | MPI.jl | OpenMPI_jll | Modules |
