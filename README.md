@@ -19,7 +19,9 @@ verified by Francis.
 ## Quick start (Nibi)
 
 ```bash
-git clone https://github.com/francispoulin/Oceananigans-DRAC.git
+git clone https://github.com/francispoulin/Oceananigans-DRAC.git        # works for everyone
+# or, if you have a GitHub SSH key set up:
+# git clone git@github.com:francispoulin/Oceananigans-DRAC.git
 cd Oceananigans-DRAC
 bash setup/setup.sh                                                     # login node, once
 sbatch --account=def-YOURPI jobs/hello_cpu.sh

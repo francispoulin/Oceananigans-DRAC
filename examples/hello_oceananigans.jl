@@ -19,3 +19,4 @@ grid = RectilinearGrid(arch, size = (8, 8, 8), extent = (1, 2, 3))
 c = CenterField(grid)
 set!(c, (x, y, z) -> x + y + z)
 @show c
+@info "hello_oceananigans: OK"
