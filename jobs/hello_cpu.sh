@@ -1,6 +1,6 @@
 #!/bin/bash
 # First test: Oceananigans on a CPU compute node. From the repository root:
-#     sbatch --account=def-YOURPI jobs/hello_cpu.sh
+#     sbatch jobs/hello_cpu.sh
 #SBATCH --job-name=hello_cpu
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4

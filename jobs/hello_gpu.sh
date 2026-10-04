@@ -1,6 +1,6 @@
 #!/bin/bash
 # Second test: Oceananigans on one GPU. From the repository root:
-#     sbatch --account=def-YOURPI jobs/hello_gpu.sh
+#     sbatch jobs/hello_gpu.sh
 #SBATCH --job-name=hello_gpu
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-task=h100:1

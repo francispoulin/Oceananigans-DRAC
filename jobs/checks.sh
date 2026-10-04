@@ -1,9 +1,9 @@
 #!/bin/bash
 # Multi-GPU checks, on any number of GPUs (one MPI rank per GPU). From the repository root:
 #
-#     sbatch --account=def-YOURPI --nodes=1 --ntasks-per-node=2 jobs/checks.sh            # 2 GPUs
-#     sbatch --account=def-YOURPI --nodes=1 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # a full Nibi node
-#     sbatch --account=def-YOURPI --nodes=2 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # across nodes
+#     sbatch --nodes=1 --ntasks-per-node=2 jobs/checks.sh            # 2 GPUs
+#     sbatch --nodes=1 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # a full Nibi node
+#     sbatch --nodes=2 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # across nodes
 #
 # Each check prints PASS or FAIL; the job stops at the first failure.
 #SBATCH --job-name=checks

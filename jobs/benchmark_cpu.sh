@@ -4,9 +4,9 @@
 # jobs/benchmark.sh. From the repository root:
 #
 #   Threads only (1 process x 192 threads):
-#     sbatch --account=def-YOURPI jobs/benchmark_cpu.sh
+#     sbatch jobs/benchmark_cpu.sh
 #   MPI and threads (recommended; 48 x 4 was fastest on Nibi for the 1440x720x200 grid):
-#     sbatch --account=def-YOURPI --ntasks=48 --cpus-per-task=4 jobs/benchmark_cpu.sh
+#     sbatch --ntasks=48 --cpus-per-task=4 jobs/benchmark_cpu.sh
 #
 # The grid is split in x only, so the number of processes must divide Nx. Each process also
 # needs at least about 23 columns: the split-explicit free surface uses a wide halo (23 for the

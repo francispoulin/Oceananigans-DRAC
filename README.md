@@ -17,17 +17,21 @@ Trillium is not yet tested.
 All results in this repository, including the scaling benchmarks, were run on Nibi and
 verified by Francis.
 
-## Quick start (Nibi)
+## Quick start
 
 ```bash
 git clone https://github.com/francispoulin/Oceananigans-DRAC.git        # works for everyone
 # or, if you have a GitHub SSH key set up:
 # git clone git@github.com:francispoulin/Oceananigans-DRAC.git
 cd Oceananigans-DRAC
+
+export SBATCH_ACCOUNT=def-yourpi     # your group's allocation
+export SALLOC_ACCOUNT=$SBATCH_ACCOUNT
+
 bash setup/setup.sh                                                     # login node, once
-sbatch --account=def-YOURPI jobs/hello_cpu.sh
-sbatch --account=def-YOURPI jobs/hello_gpu.sh
-sbatch --account=def-YOURPI --nodes=1 --ntasks-per-node=2 jobs/checks.sh
+sbatch jobs/hello_cpu.sh
+sbatch jobs/hello_gpu.sh
+sbatch --nodes=1 --ntasks-per-node=2 jobs/checks.sh
 ```
 
 The full walkthrough is [docs/drac.md](docs/drac.md), which is also posted in the

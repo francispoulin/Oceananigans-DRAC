@@ -26,12 +26,11 @@ export OPAL_PREFIX="$EBROOTOPENMPI"
 # Root of this repository (the folder containing env/), for scripts that need it.
 export OCEANANIGANS_DRAC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Julia depot: where packages and compiled code are stored. Keep it out of $HOME (small
-# quota). Choose another by setting JULIA_DEPOT_PATH before sourcing this file.
-# Scratch is purged: files not accessed for 60 days are deleted (with an email warning).
-# If package errors appear after a long break, delete the depot and rerun setup/setup.sh.
+# Julia depot: where packages and compiled code are stored (about 2 GB). Not on $SCRATCH,
+# which is purged after 60 days without access. Choose another (e.g. project space) by
+# setting JULIA_DEPOT_PATH before sourcing this file.
+export JULIA_DEPOT_PATH="${_drac_depot:-$HOME/julia_depot}"
 
-export JULIA_DEPOT_PATH="${_drac_depot:-$SCRATCH/julia_depot}"
 unset _drac_depot
 
 # One CPU thread per rank is enough when the work is on the GPU.

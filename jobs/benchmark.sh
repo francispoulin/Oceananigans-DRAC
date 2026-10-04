@@ -1,10 +1,10 @@
 #!/bin/bash
 # Oceananigans benchmark suite on any number of GPUs, as used for the Nibi scaling results.
 # Runs the benchmarks in an Oceananigans checkout (its benchmarking/ folder), which needs the
-# same MPI setup as this repository: see docs/drac.md, "Running the Oceananigans benchmarks".
+# same MPI setup as this repository: see docs/drac.md, `section 8`.
 #
-#     sbatch --account=def-YOURPI --job-name=bench_gpu4  --nodes=1 --ntasks-per-node=4 jobs/benchmark.sh
-#     sbatch --account=def-YOURPI --job-name=bench_gpu16 --nodes=2 --ntasks-per-node=8 --mem=0 jobs/benchmark.sh
+#     sbatch --job-name=bench_gpu4  --nodes=1 --ntasks-per-node=4 jobs/benchmark.sh
+#     sbatch --job-name=bench_gpu16 --nodes=2 --ntasks-per-node=8 --mem=0 jobs/benchmark.sh
 #
 # Settings through environment variables, for example
 #     sbatch --export=ALL,SIZE=2880x1440x200 ... jobs/benchmark.sh

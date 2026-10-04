@@ -22,8 +22,8 @@ is tested and kept up to date. Please comment below if something doesn't work.
 
 - **Login nodes have internet access but no GPUs.** Install packages on a login node;
   `nvidia-smi` failing there is normal.
-- **Keep the Julia depot out of `$HOME`**, which has a small quota, and **set it after
-  loading modules** (step 2).
+- **Keep the Julia depot and your clones off `$SCRATCH`**, which is purged, and **set the
+  depot after loading modules** (step 2).
 - **Multi-GPU runs need Julia to use the system OpenMPI throughout** (step 3, plus
   `OPAL_PREFIX`, set by `env/drac.sh`; see step 7). Otherwise they crash at `MPI.Init()`,
   typically as soon as NetCDF output is involved.
@@ -32,7 +32,7 @@ is tested and kept up to date. Please comment below if something doesn't work.
 ## 1. Get the scripts
 
 ```bash
-cd $SCRATCH          # or wherever you keep software
+cd /project/<group>/$USER      # project space (step 2), or $HOME; not $SCRATCH, which is purged
 git clone https://github.com/francispoulin/Oceananigans-DRAC.git
 cd Oceananigans-DRAC
 ```
@@ -50,26 +50,29 @@ The commands below assume this is set; otherwise add `--account=def-yourpi` to e
 
 Every step uses `env/drac.sh`, which loads the modules (`StdEnv/2023`, `gcc/12.3`,
 `openmpi/4.1.5`, `cuda/12.6`, `julia/1.10.10`) and sets the Julia depot: the folder where
-packages and compiled code are stored. It is `$SCRATCH/julia_depot` unless you set
-`JULIA_DEPOT_PATH` before sourcing the file.
-It starts with `module --force purge`, so modules loaded at login (including "sticky" ones) don't leak into jobs.
+packages and compiled code are stored.  It is `$HOME/julia_depot` unless you set `JULIA_DEPOT_PATH` before sourcing the file. It starts with `module --force purge`, so modules loaded at login (including "sticky" ones) don't leak into jobs.
 
-**Why the depot needs care on DRAC clusters.** The `julia` module runs
-`append_path("JULIA_DEPOT_PATH", ":")`, so every time it is loaded it adds a colon to the
-depot path. Julia reads empty entries in the depot path as "add the default depots here",
-and those include `~/.julia` in your home directory. Packages can then come from, or be
-written to, an unexpected place. `env/drac.sh` strips whatever the module added.
-
-If you also use Julia interactively, set the depot in your `~/.bashrc` **after** any
-`module load` lines, in the same way:
+**Where to put the depot.** A depot with Oceananigans, CUDA and MPI is about 2 GB and
+12,000 files. If your group has project space, put it there:
+`/project/<group>/<user>/julia_depot` (the same path on Nibi, Fir and Rorqual). The space
+and its quota are shared by your whole group, so check `diskusage_report` first. `$HOME`
+also works (50 GB). Avoid `$SCRATCH`: files not accessed for 60 days are purged, which can
+break the depot. Always refer to the depot by the same path, as Julia may recompile
+everything if the path changes. Set it in your `~/.bashrc`, **after** any `module load`
+lines:
 
 ```bash
-export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH%%:*}"                    # drop what the module added
-export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-$SCRATCH/julia_depot}"  # default if unset
+export JULIA_DEPOT_PATH=/project/<group>/<user>/julia_depot
 ```
 
-A single line such as `export JULIA_DEPOT_PATH=${JULIA_DEPOT_PATH:-$SCRATCH/julia_depot}`
-is not enough: the module's `:` counts as "set".
+**Why the order matters.** The `julia` module runs `append_path("JULIA_DEPOT_PATH", ":")`,
+so every time it is loaded it adds a colon to the depot path. Julia reads empty entries in
+the depot path as "add the default depots here", and those include `~/.julia` in your home
+directory. Packages can then come from, or be written to, an unexpected place. Setting the
+variable after loading modules replaces whatever the module added, and `env/drac.sh` strips
+it in jobs.
+
+
 
 If your group has project space, put the depot there: `/project/<group>/<user>/julia_depot`
 (the same path on Nibi, Fir and Rorqual). The space and its quota are shared by your whole
@@ -87,7 +90,7 @@ things:
 
 1. **Installs the tested package versions** from the repository's `Manifest.toml`
    (Oceananigans, CUDA, MPI, NCDatasets, JLD2).
-2. **Makes MPI.jl use the system OpenMPI**, which is built for Nibi's network and for
+2. **Makes MPI.jl use the system OpenMPI**, which is built for the cluster's network and for
    Slurm. DRAC modules don't set `LD_LIBRARY_PATH`, so `MPIPreferences.use_system_binary()`
    can't find `libmpi` by searching; the script passes the module's `lib` folder as
    `extra_paths`.
@@ -114,10 +117,8 @@ Both paths must be under `/cvmfs`, not in your Julia depot. The setup writes
 
 ## 4. Hello on a CPU node
 
-Every job script takes your allocation with `--account`:
-
 ```bash
-sbatch --account=def-YOURPI jobs/hello_cpu.sh
+sbatch jobs/hello_cpu.sh
 ```
 
 `hello_cpu_<jobid>.out` should end with:
@@ -136,7 +137,7 @@ c = 8×8×8 Field{Center, Center, Center} on RectilinearGrid on CPU
 ## 5. Hello on one GPU
 
 ```bash
-sbatch --account=def-YOURPI jobs/hello_gpu.sh
+sbatch jobs/hello_gpu.sh
 ```
 
 The same grid and field, now on `CUDAGPU`:
@@ -154,9 +155,9 @@ grid = 8×8×8 RectilinearGrid{Float64, Periodic, Periodic, Bounded} on CUDAGPU 
 `jobs/checks.sh` runs four checks on any number of GPUs, one MPI rank per GPU:
 
 ```bash
-sbatch --account=def-YOURPI --nodes=1 --ntasks-per-node=2 jobs/checks.sh            # 2 GPUs
-sbatch --account=def-YOURPI --nodes=1 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # a full node
-sbatch --account=def-YOURPI --nodes=2 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # two nodes
+sbatch --nodes=1 --ntasks-per-node=2 jobs/checks.sh            # 2 GPUs
+sbatch --nodes=1 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # a full node
+sbatch --nodes=2 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # two nodes
 ```
 
 These are for Nibi (8 GPUs per node). On Fir and Rorqual use `--ntasks-per-node=4`: a full
@@ -170,7 +171,7 @@ node is `--nodes=1 --ntasks-per-node=4 --mem=0`, two nodes are `--nodes=2`. Use 
 | `distributed_vs_serial` | ∂c/∂x on a grid split across ranks, versus one GPU | Agreement to round-off (in practice, exactly) |
 | `output` | Writing and reading NetCDF and JLD2 files on every rank | Files read back exactly |
 
-Each prints `PASS` or `FAIL`, and the job stops at the first failure. On two nodes
+Each prints `PASS` or `FAIL`, and the job stops at the first failure. On two Nibi nodes
 (16 GPUs) the output ends with:
 
 ```
@@ -299,12 +300,12 @@ per cell (plus halo overhead), so one H100 holds up to about 300 million cells. 
 **Running the benchmark suite.** `jobs/benchmark.sh` runs the suite in an Oceananigans
 checkout (its `benchmarking/` folder, set with `BENCH_DIR`). That folder has its own Julia
 environment, which needs the same MPI setup as step 3 (system MPI with `extra_paths`,
-`OpenMPI_jll` at 4.1 and redirected) plus the `OPAL_PREFIX` reset of step 7 before MPI
-starts in `run_benchmarks.jl`. Grid size and time step are set with environment variables,
+`OpenMPI_jll` at 4.1 and redirected) `jobs/benchmark.sh` sources `env/drac.sh`,
+so no `OPAL_PREFIX` reset is needed. Grid size and time step are set with environment variables,
 for example:
 
 ```bash
-sbatch --account=def-YOURPI --job-name=b8_gpu16 --nodes=2 --ntasks-per-node=8 --mem=0 \
+sbatch --job-name=b8_gpu16 --nodes=2 --ntasks-per-node=8 --mem=0 \
        --export=ALL,SIZE=2880x1440x200,DT=30 jobs/benchmark.sh
 ```
 
@@ -314,12 +315,12 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
 ## 9. Known issues, now fixed upstream
 
 - **`OPAL_PREFIX` and NetCDF** (step 7): `OpenMPI_jll` overwrote `OPAL_PREFIX` even when its
-     library was redirected to a system OpenMPI, which crashed multi-GPU runs writing NetCDF
-     output ([Yggdrasil issue #14991](https://github.com/JuliaPackaging/Yggdrasil/issues/14991)).
-     Fixed in `OpenMPI_jll` 4.1.10.  `get!` keeps an existing `OPAL_PREFIX`, which is why the env script sets it.
+  library was redirected to a system OpenMPI, which crashed multi-GPU runs writing NetCDF
+  output ([Yggdrasil issue #14991](https://github.com/JuliaPackaging/Yggdrasil/issues/14991)).
+  Fixed in `OpenMPI_jll` 4.1.10.  `get!` keeps an existing `OPAL_PREFIX`, which is why the env script sets it.
 - **GPU memory missing in distributed benchmark results:** the benchmark suite recorded memory
-     only for single-GPU runs. Fixed in
-     [Oceananigans pull request #6136](https://github.com/CliMA/Oceananigans.jl/pull/6136).
+  only for single-GPU runs. Fixed in
+  [Oceananigans pull request #6136](https://github.com/CliMA/Oceananigans.jl/pull/6136).
      
 ## 10. Tested with
 
@@ -330,9 +331,11 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
 | Rorqual | 2026-10-04 | 1.10.10 | 0.113.5 | 6.4.1 | 0.20.27 | 4.1.10 | same as above |
 
 Nibi: fresh depot, setup, both hello jobs, and all checks on 2 GPUs and on 16 GPUs across
-2 nodes (before the move to OpenMPI_jll 4.1.10; to be rechecked). Fir: fresh clone and depot,
-setup, both hello jobs, and all checks on 2 GPUs and on 8 GPUs across 2 nodes (4 per node,
-InfiniBand).
+2 nodes (before the move to OpenMPI_jll 4.1.10; to be rechecked).
+
+Fir: fresh clone and depot, setup, both hello jobs, and all checks on 2 GPUs, a full node
+(4 GPUS) and 8 GPUs across 2 nodes (4 per node,InfiniBand), repeated from a fresh clone
+with the depot in project space.
 
 Rorqual: setup, both hello jobs, and all checks on a full node (4 GPUs) and on 8 GPUs across
 2 nodes (InfiniBand); `checks/no_opal_reset.jl` passes without the `OPAL_PREFIX` reset.
@@ -357,10 +360,8 @@ if the modules differ.
   resubmit with `sbatch --exclude=<node> ...`, and report it to
   support@tech.alliancecan.ca. There is no `SBATCH_` environment variable for `--exclude`;
   put it on the command line or in an `#SBATCH` line.
-- **Errors loading packages after weeks without using the cluster.** Files on `$SCRATCH`
-  that haven't been accessed for 60 days are purged (you get an email first), and this can
-  remove parts of the Julia depot. Delete the depot and rerun `bash setup/setup.sh` (and
-  `setup/configure_mpi.sh` for your own projects).  
+- **Errors loading packages after weeks without using the cluster** (depot or clones on
+  `$SCRATCH`).` Better: moe them to project sapce or `$HOME` (step2).
 
 ## Authors
 
