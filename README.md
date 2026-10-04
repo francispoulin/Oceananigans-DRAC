@@ -4,7 +4,8 @@ Scripts and instructions for running [Oceananigans.jl](https://github.com/CliMA/
 on the GPU clusters of the Digital Research Alliance of Canada (DRAC), including multi-GPU
 runs with CUDA-aware MPI.
 
-**Status:** verified on Nibi (October 2026). Fir, Rorqual and Trillium will follow.
+**Status:** verified on Nibi (October 2026). Fir, and Rorqual (October 2026).
+Trillium is not yet tested.
 
 ## Authors
 

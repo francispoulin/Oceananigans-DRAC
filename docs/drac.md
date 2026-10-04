@@ -322,11 +322,15 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Nibi | 2026-10-02 | 1.10.10 | 0.113.5 | 6.4.1 | 0.20.27 | 4.1.9 | StdEnv/2023, gcc/12.3, openmpi/4.1.5, cuda/12.6, julia/1.10.10 |
 | Fir | 2026-10-04 | 1.10.10 | 0.113.5 | 6.4.1 | 0.20.27 | 4.1.10 | same as above |
+| Rorqual | 2026-10-04 | 1.10.10 | 0.113.5 | 6.4.1 | 0.20.27 | 4.1.10 | same as above |
 
 Nibi: fresh depot, setup, both hello jobs, and all checks on 2 GPUs and on 16 GPUs across
 2 nodes (before the move to OpenMPI_jll 4.1.10; to be rechecked). Fir: fresh clone and depot,
 setup, both hello jobs, and all checks on 2 GPUs and on 8 GPUs across 2 nodes (4 per node,
 InfiniBand).
+
+Rorqual: setup, both hello jobs, and all checks on a full node (4 GPUs) and on 8 GPUs across
+2 nodes (InfiniBand); `checks/no_opal_reset.jl` passes without the `OPAL_PREFIX` reset.
    
 ## 11. Other clusters
 
