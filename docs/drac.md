@@ -71,6 +71,11 @@ export JULIA_DEPOT_PATH="${JULIA_DEPOT_PATH:-$SCRATCH/julia_depot}"  # default i
 A single line such as `export JULIA_DEPOT_PATH=${JULIA_DEPOT_PATH:-$SCRATCH/julia_depot}`
 is not enough: the module's `:` counts as "set".
 
+If your group has project space, put the depot there: `/project/<group>/<user>/julia_depot`
+(the same path on Nibi, Fir and Rorqual). The space and its quota are shared by your whole
+group, so check `diskusage_report` first. Always refer to the depot by the same path: Julia
+may recompile everything if the path changes.
+
 ## 3. One-time setup (login node)
 
 ```bash
