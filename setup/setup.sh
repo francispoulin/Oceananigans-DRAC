@@ -11,7 +11,7 @@
 # It writes LocalPreferences.toml (machine-specific, so not under version control).
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-source env/nibi.sh
+source env/drac.sh
 set -eo pipefail          # after loading modules, as module commands can return harmless errors
 
 # The system OpenMPI library. Alliance modules don't set LD_LIBRARY_PATH, so Julia can't find

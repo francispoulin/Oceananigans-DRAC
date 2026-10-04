@@ -16,7 +16,7 @@
 #SBATCH --output=%x_%j.out
 
 cd "$SLURM_SUBMIT_DIR"
-source env/nibi.sh
+source env/drac.sh
 set -eo pipefail          # after loading modules, as module commands can return harmless errors
 echo "Job ${SLURM_JOB_ID}: ${SLURM_NTASKS} GPU(s) on ${SLURM_JOB_NUM_NODES} node(s)"
 

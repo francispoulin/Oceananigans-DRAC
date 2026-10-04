@@ -32,7 +32,7 @@ cd Oceananigans-DRAC
 
 ## 2. Environment and Julia depot
 
-Every step uses `env/nibi.sh`, which loads the modules (`StdEnv/2023`, `gcc/12.3`,
+Every step uses `env/drac.sh`, which loads the modules (`StdEnv/2023`, `gcc/12.3`,
 `openmpi/4.1.5`, `cuda/12.6`, `julia/1.10.10`) and sets the Julia depot: the folder where
 packages and compiled code are stored. It is `$SCRATCH/julia_depot` unless you set
 `JULIA_DEPOT_PATH` before sourcing the file. `module purge` leaves a few "sticky" modules
@@ -42,7 +42,7 @@ loaded and lists them; that's expected.
 `append_path("JULIA_DEPOT_PATH", ":")`, so every time it is loaded it adds a colon to the
 depot path. Julia reads empty entries in the depot path as "add the default depots here",
 and those include `~/.julia` in your home directory. Packages can then come from, or be
-written to, an unexpected place. `env/nibi.sh` strips whatever the module added.
+written to, an unexpected place. `env/drac.sh` strips whatever the module added.
 
 If you also use Julia interactively, set the depot in your `~/.bashrc` **after** any
 `module load` lines, in the same way:
@@ -204,7 +204,7 @@ drac_mpi_init()
 arch = Distributed(GPU())
 ```
 
-(`OCEANANIGANS_DRAC_ROOT` is set by `env/nibi.sh`.) For a job script, copy
+(`OCEANANIGANS_DRAC_ROOT` is set by `env/drac.sh`.) For a job script, copy
 `jobs/checks.sh` and replace the checks with your own script.
 
 If your runs write only JLD2 output and never load NetCDF packages, `OpenMPI_jll` isn't
@@ -287,6 +287,14 @@ Verified from scratch: fresh depot, setup, both hello jobs, and all checks on 2 
 16 GPUs across 2 nodes. The benchmarks used Oceananigans 0.113.5 with CUDA.jl 6.1.0.
 
 ## Other DRAC clusters
+
+## Other DRAC clusters
+
+**Fir** (4 H100 GPUs per node) is tested: the setup, both hello jobs and all checks pass on
+2 GPUs, on a full node (4 GPUs) and across 2 nodes (8 GPUs, InfiniBand), with only the Slurm
+node options changed (`--ntasks-per-node=4`, `--mem=0` for a full node). Rorqual has the same
+node layout and should work the same way. Trillium is run by SciNet and may need different job
+settings. Contributions from other clusters are welcome.
 
 Fir and Rorqual have 4 GPUs per node (use `--ntasks-per-node=4`, and `--mem=0` for a full
 node). Trillium is run by SciNet and may need different job settings. Testing on these is

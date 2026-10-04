@@ -34,7 +34,7 @@ Oceananigans Discussions (TODO: link).
 
 | Path | Contents |
 | --- | --- |
-| `env/nibi.sh` | Modules and environment, sourced by setup and every job |
+| `env/drac.sh` | Modules and environment, sourced by setup and every job |
 | `setup/setup.sh` | One-time setup: packages, system MPI, OpenMPI_jll redirect |
 | `src/drac_mpi.jl` | `drac_mpi_init()`: starts MPI safely when NetCDF is loaded |
 | `examples/` | A first Oceananigans script, on CPU or GPU |

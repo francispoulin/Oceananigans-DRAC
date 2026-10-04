@@ -1,7 +1,7 @@
 #!/bin/bash
-# Environment for Oceananigans on Nibi (SHARCNET). Source it, don't run it:
+# Environment for Oceananigans on Alliance clusters (Nibi, Fir, Rorqual). Source it, don't run it:
 #
-#     source env/nibi.sh
+#     source env/drac.sh
 #
 # Used by setup/setup.sh and by every job script, so that setup and jobs always see the
 # same modules and the same Julia depot.
@@ -36,7 +36,7 @@ unset _drac_depot
 # One CPU thread per rank is enough when the work is on the GPU.
 export JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-1}"
 
-echo "Oceananigans-DRAC environment (Nibi): repo=$OCEANANIGANS_DRAC_ROOT, depot=$JULIA_DEPOT_PATH"
+echo "Oceananigans-DRAC environment (${CC_CLUSTER:-unknown cluster}): repo=$OCEANANIGANS_DRAC_ROOT, depot=$JULIA_DEPOT_PATH"
 
 
 

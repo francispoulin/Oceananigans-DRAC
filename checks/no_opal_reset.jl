@@ -6,7 +6,7 @@
 # fails with 4.1.9. Run with two ranks (no GPU needed):
 #
 #     sbatch --account=def-YOURPI --nodes=1 --ntasks=2 --mem=4G --time=0:10:00 \
-#            --wrap='source env/nibi.sh; srun julia --project=. checks/no_opal_reset.jl'
+#            --wrap='source env/drac.sh; srun julia --project=. checks/no_opal_reset.jl'
 
 using NCDatasets      # loads NetCDF_jll and OpenMPI_jll, as in a real run with NetCDF output
 using MPI

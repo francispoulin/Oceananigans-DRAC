@@ -9,6 +9,6 @@
 #SBATCH --output=%x_%j.out
 
 cd "$SLURM_SUBMIT_DIR"
-source env/nibi.sh
+source env/drac.sh
 set -eo pipefail          # after loading modules, as module commands can return harmless errors
 julia --project=. examples/hello_oceananigans.jl CPU
