@@ -4,8 +4,7 @@ Scripts and instructions for running [Oceananigans.jl](https://github.com/CliMA/
 on the GPU clusters of the Digital Research Alliance of Canada (DRAC), including multi-GPU
 runs with CUDA-aware MPI.
 
-**Status:** verified on Nibi (October 2026). Fir, and Rorqual (October 2026).
-Trillium is not yet tested.
+**Status:** verified on Nibi, Fir and Rorqual (October 2026). Trillium is not yet tested.
 
 ## Authors
 
@@ -51,12 +50,12 @@ Oceananigans Discussions (TODO: link).
 | `docs/` | Cluster guides |
 
 `LocalPreferences.toml` is written by `setup/setup.sh` on each machine and is not under
-version control. `Project.toml` and `Manifest.toml` will record the tested package versions.
+version control. `Project.toml` and `Manifest.toml` records the tested package versions.
 
 ## Contributing
 
 Corrections and other clusters are welcome: open an issue or a pull request. A new cluster
-needs an `env/<cluster>.sh` and a section in its guide.
+needs an `env/<cluster>.sh` and a row in `docs/drac.md`.
 
 ## License
 

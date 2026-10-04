@@ -72,13 +72,6 @@ directory. Packages can then come from, or be written to, an unexpected place. S
 variable after loading modules replaces whatever the module added, and `env/drac.sh` strips
 it in jobs.
 
-
-
-If your group has project space, put the depot there: `/project/<group>/<user>/julia_depot`
-(the same path on Nibi, Fir and Rorqual). The space and its quota are shared by your whole
-group, so check `diskusage_report` first. Always refer to the depot by the same path: Julia
-may recompile everything if the path changes.
-
 ## 3. One-time setup (login node)
 
 ```bash
@@ -277,7 +270,6 @@ MPI rank per GPU; grid split in x. Throughput is for the whole grid.
 | | 32 | 4 | 0.1609 | 80.5% | 5.16e9 | 8.19 |
 | 1/16°, 5760 × 2880 × 200 (3.3 billion) | 16 | 2 | 1.0526 | 100% | 3.15e9 | 49.97 |
 | | 32 | 4 | 0.5649 | 93.2% | 5.87e9 | 27.53 |
-| | 64 | 8 | pending | | | |
 
 Efficiency is relative to the smallest GPU count at each resolution.
 
@@ -333,9 +325,7 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
 Nibi: fresh depot, setup, both hello jobs, and all checks on 2 GPUs and on 16 GPUs across
 2 nodes (before the move to OpenMPI_jll 4.1.10; to be rechecked).
 
-Fir: fresh clone and depot, setup, both hello jobs, and all checks on 2 GPUs, a full node
-(4 GPUS) and 8 GPUs across 2 nodes (4 per node,InfiniBand), repeated from a fresh clone
-with the depot in project space.
+Fir: setup, both hello jobs, and all checks on 2 GPUs, a full node (4 GPUs) and 8 GPUs across 2 nodes (InfiniBand); repeated from a fresh clone with the depot in project space.
 
 Rorqual: setup, both hello jobs, and all checks on a full node (4 GPUs) and on 8 GPUs across
 2 nodes (InfiniBand); `checks/no_opal_reset.jl` passes without the `OPAL_PREFIX` reset.
@@ -360,8 +350,11 @@ if the modules differ.
   resubmit with `sbatch --exclude=<node> ...`, and report it to
   support@tech.alliancecan.ca. There is no `SBATCH_` environment variable for `--exclude`;
   put it on the command line or in an `#SBATCH` line.
-- **Errors loading packages after weeks without using the cluster** (depot or clones on
-  `$SCRATCH`).` Better: moe them to project sapce or `$HOME` (step2).
+- **Errors loading packages after weeks without   using the cluster** (depot or clones on
+  `$SCRATCH`). Files on `$SCRATCH` that haven't been accessed for 60 days are purged (you
+  get an email first), and this can remove parts of the Julia depot. Delete the depot and
+  rerun `bash setup/setup.sh` (and `setup/configure_mpi.sh` for your own projects); better,
+  move both to project space or `$HOME` (step 2).
 
 ## Authors
 
