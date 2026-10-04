@@ -330,7 +330,9 @@ Nibi: fresh depot, setup, both hello jobs, and all checks on 2 GPUs and on 16 GP
 Fir: setup, both hello jobs, and all checks on 2 GPUs, a full node (4 GPUs) and 8 GPUs across 2 nodes (InfiniBand); repeated from a fresh clone with the depot in project space.
 
 Rorqual: setup, both hello jobs, and all checks on a full node (4 GPUs) and on 8 GPUs across
-2 nodes (InfiniBand); `checks/no_opal_reset.jl` passes without the `OPAL_PREFIX` reset.
+2 nodes (InfiniBand); `checks/no_opal_reset.jl` passes without the `OPAL_PREFIX` reset;
+repeated from a fresh clone with the depot in project space.
+
    
 ## 11. Other clusters
 
