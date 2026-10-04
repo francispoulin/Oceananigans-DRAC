@@ -2,7 +2,7 @@
 
 julia_version = "1.10.10"
 manifest_format = "2.0"
-project_hash = "f0f91d51f6a5af2dc6662e445dd4ce0467772cd9"
+project_hash = "d7bef8e728e8efbde4d19561b67b4437907e9402"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -701,9 +701,9 @@ version = "0.3.23+4"
 
 [[deps.OpenMPI_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "TOML", "Zlib_jll"]
-git-tree-sha1 = "f63b507960445b8639de5053fedda55af3ffb41f"
+git-tree-sha1 = "377d04b3a57afad8fedf1e4e2b89c13d502b5d63"
 uuid = "fe0851c0-eecd-5654-98d4-656369965a5c"
-version = "4.1.9+0"
+version = "4.1.10+0"
 
 [[deps.OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]

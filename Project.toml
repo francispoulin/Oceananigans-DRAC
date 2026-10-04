@@ -9,4 +9,4 @@ OpenMPI_jll = "fe0851c0-eecd-5654-98d4-656369965a5c"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 
 [compat]
-OpenMPI_jll = "4.1"
+OpenMPI_jll = "~4.1.10"

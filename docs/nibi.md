@@ -73,8 +73,8 @@ things:
 3. **Redirects Julia's own OpenMPI to the system library.** NetCDF and HDF5 output packages
    load `OpenMPI_jll`, Julia's own copy of OpenMPI. Without the redirect, two MPIs end up in
    one process. The redirect only works when both are the same series, so the repository
-   restricts `OpenMPI_jll` to **4.1**, matching the `openmpi/4.1.5` module; the newest
-   `OpenMPI_jll` (5.x) fails with `undefined symbol: ompi_instance_count`.
+   restricts `OpenMPI_jll` to **4.1.10 or later in the 4.1 series**, matching the `openmpi/4.1.5` module;
+   the newest `OpenMPI_jll` (5.x) fails with `undefined symbol: ompi_instance_count`.
 4. **Precompiles.**
 
 The key lines of the output:
@@ -272,7 +272,7 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
    - **`OPAL_PREFIX` and NetCDF** (step 7): `OpenMPI_jll` overwrote `OPAL_PREFIX` even when its
      library was redirected to a system OpenMPI, which crashed multi-GPU runs writing NetCDF
      output ([Yggdrasil issue #14991](https://github.com/JuliaPackaging/Yggdrasil/issues/14991)).
-     Fixed in `OpenMPI_jll` 4.1.10.
+     Fixed in `OpenMPI_jll` 4.1.10.  `get!` keeps an existing `OPAL_PREFIX`, which is why the env script sets it.
    - **GPU memory missing in distributed benchmark results:** the benchmark suite recorded memory
      only for single-GPU runs. Fixed in
      [Oceananigans pull request #6136](https://github.com/CliMA/Oceananigans.jl/pull/6136).

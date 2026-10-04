@@ -19,6 +19,10 @@ module load openmpi/4.1.5
 module load cuda/12.6
 module load julia/1.10.10
 
+# OpenMPI_jll >= 4.1.10 keeps OPAL_PREFIX if it is already set. Pointing it at the system
+# OpenMPI makes MPI.Init() load the system plugins even when NetCDF loads OpenMPI_jll.
+export OPAL_PREFIX="$EBROOTOPENMPI"
+
 # Root of this repository (the folder containing env/), for scripts that need it.
 export OCEANANIGANS_DRAC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

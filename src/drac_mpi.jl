@@ -4,9 +4,9 @@
 # ---------------
 # Packages that write NetCDF or HDF5 output (NCDatasets, and anything built on it) load
 # NetCDF_jll / HDF5_jll, which in turn load OpenMPI_jll: Julia's own copy of OpenMPI.
-# setup/setup.sh redirects OpenMPI_jll to the system OpenMPI library, but when OpenMPI_jll
-# loads it still sets the environment variable OPAL_PREFIX to its own folder. The system
-# OpenMPI then loads Julia's OpenMPI plugins at MPI.Init() and crashes with
+# setup/setup.sh redirects OpenMPI_jll to the system OpenMPI library, but before 4.1.10
+# OpenMPI_jll overwrote the environment variable OPAL_PREFIX with its own folder when it
+# loaded. The system OpenMPI then loaded Julia's OpenMPI plugins at MPI.Init() and crashed with
 #
 #     symbol lookup error: .../artifacts/.../lib/openmpi/mca_pmix_pmix3x.so:
 #     undefined symbol: opal_libevent2022_evthread_use_pthreads

@@ -1,12 +1,12 @@
 # Does MPI start correctly WITHOUT the OPAL_PREFIX reset in src/drac_mpi.jl?
 #
-# Before OpenMPI_jll 4.1.10, loading NetCDF (which loads OpenMPI_jll) overwrote OPAL_PREFIX,
-# and MPI.Init() then crashed with a symbol lookup error. 4.1.10 leaves OPAL_PREFIX alone when
-# its library is redirected to the system OpenMPI (Yggdrasil issue #14991), so this script
-# should pass with 4.1.10 and fail with 4.1.9. Run with two ranks, OPAL_PREFIX unset:
+# env/*.sh sets OPAL_PREFIX to the system OpenMPI. OpenMPI_jll >= 4.1.10 keeps an existing
+# value (`get!(ENV, "OPAL_PREFIX", artifact_dir)`, Yggdrasil #14991); 4.1.9 and earlier
+# overwrite it, and MPI.Init() then crashes with a symbol lookup error. Passes with 4.1.10,
+# fails with 4.1.9. Run with two ranks (no GPU needed):
 #
-#     sbatch --account=def-YOURPI --nodes=1 --ntasks-per-node=2 --gpus-per-task=h100:1 \
-#            --time=0:15:00 --wrap='source env/nibi.sh; unset OPAL_PREFIX; srun julia --project=. checks/no_opal_reset.jl'
+#     sbatch --account=def-YOURPI --nodes=1 --ntasks=2 --mem=4G --time=0:10:00 \
+#            --wrap='source env/nibi.sh; srun julia --project=. checks/no_opal_reset.jl'
 
 using NCDatasets      # loads NetCDF_jll and OpenMPI_jll, as in a real run with NetCDF output
 using MPI
