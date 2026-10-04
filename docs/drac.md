@@ -224,7 +224,30 @@ drac_mpi_init()
 arch = Distributed(GPU())
 ```
 
+### Your own project folder
 
+Your simulations will usually live in their own folder with their own `Project.toml`, not
+in this repository. That project needs the same MPI setup as step 3. Once per cluster, on a
+login node:
+
+```bash
+bash /path/to/Oceananigans-DRAC/setup/configure_mpi.sh /path/to/your/project
+```
+
+It adds `MPIPreferences`, `Preferences` and `OpenMPI_jll` (4.1 series, 4.1.10 or later) to
+the project if they are missing, points MPI.jl and `OpenMPI_jll` at the system OpenMPI, and
+precompiles. The `libmpi_path` it prints must be under `/cvmfs`. It writes
+`LocalPreferences.toml` in your project. That file holds paths for this machine, so add it to
+`.gitignore`, and commit `Project.toml` and `Manifest.toml`.
+
+Your job scripts then source the same environment and run Julia in your project:
+
+```bash
+source /path/to/Oceananigans-DRAC/env/drac.sh
+srun --cpu-bind=none julia --project=. my_simulation.jl
+```
+
+Because `env/drac.sh` sets the depot, the project reuses the packages that step 3 installed.
 
 ## 8. Scaling on Nibi
 
@@ -325,7 +348,10 @@ if the modules differ.
   resubmit with `sbatch --exclude=<node> ...`, and report it to
   support@tech.alliancecan.ca. There is no `SBATCH_` environment variable for `--exclude`;
   put it on the command line or in an `#SBATCH` line.
-  
+- **Errors loading packages after weeks without using the cluster.** Files on `$SCRATCH`
+  that haven't been accessed for 60 days are purged (you get an email first), and this can
+  remove parts of the Julia depot. Delete the depot and rerun `bash setup/setup.sh` (and
+  `setup/configure_mpi.sh` for your own projects).  
 
 ## Authors
 

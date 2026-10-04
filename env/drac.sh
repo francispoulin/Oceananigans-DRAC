@@ -28,8 +28,9 @@ export OCEANANIGANS_DRAC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Julia depot: where packages and compiled code are stored. Keep it out of $HOME (small
 # quota). Choose another by setting JULIA_DEPOT_PATH before sourcing this file.
-# TODO (verification): check Nibi's scratch purge policy; if old files are purged, a depot
-# on $SCRATCH can silently lose packages, and a project directory is the safer default.
+# Scratch is purged: files not accessed for 60 days are deleted (with an email warning).
+# If package errors appear after a long break, delete the depot and rerun setup/setup.sh.
+
 export JULIA_DEPOT_PATH="${_drac_depot:-$SCRATCH/julia_depot}"
 unset _drac_depot
 
