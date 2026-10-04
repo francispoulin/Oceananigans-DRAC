@@ -34,7 +34,7 @@ sbatch --nodes=1 --ntasks-per-node=2 jobs/checks.sh
 ```
 
 The full walkthrough is [docs/drac.md](docs/drac.md), which is also posted in the
-Oceananigans Discussions (TODO: link).
+Oceananigans Discussions (https://github.com/CliMA/Oceananigans.jl/discussions/6150).
 
 ## What's here
 
