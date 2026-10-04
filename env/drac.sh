@@ -12,7 +12,7 @@
 # keeps Julia to exactly one depot.
 _drac_depot="${JULIA_DEPOT_PATH%%:*}"
 
-module purge                 # some modules are "sticky" and stay loaded: that is normal
+module --force purge                 # some modules are "sticky" and stay loaded: that is normal
 module load StdEnv/2023
 module load gcc/12.3
 module load openmpi/4.1.5

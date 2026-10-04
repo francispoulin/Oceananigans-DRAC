@@ -13,4 +13,5 @@ cd "$SLURM_SUBMIT_DIR"
 source env/drac.sh
 set -eo pipefail          # after loading modules, as module commands can return harmless errors
 nvidia-smi -L
+nvidia-smi --query-gpu=name,memory.used,memory.total --format=csv
 julia --project=. examples/hello_oceananigans.jl GPU
