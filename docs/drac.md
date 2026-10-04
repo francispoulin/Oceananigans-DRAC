@@ -1,26 +1,33 @@
-# Using DRAC's Nibi cluster
+# Using the Digital Research Alliance of Canada's GPU clusters (Nibi, Fir, Rorqual)
 
 ## Overview
 
-[Nibi](https://docs.alliancecan.ca/wiki/Nibi) is a cluster of the Digital Research Alliance
-of Canada (DRAC), run by SHARCNET at the University of Waterloo. Its GPU nodes each have
-**8 NVIDIA H100 80 GB GPUs** and Intel Xeon Platinum 8570 CPUs. Jobs are scheduled with
-**Slurm**.
+The Digital Research Alliance of Canada (DRAC) runs several national GPU clusters with
+NVIDIA H100 80 GB GPUs, a common software stack (`/cvmfs`, `StdEnv/2023`) and Slurm. The
+same scripts work on all of them; only the Slurm node options differ:
 
-This post covers running Oceananigans on Nibi, from a first CPU job to multi-node GPU runs:
-installing packages, setting up CUDA-aware MPI, Slurm scripts, checking that the setup is
-correct, and scaling results. All the scripts are in the
+| Cluster | GPUs per node | A full node |
+| --- | --- | --- |
+| [Nibi](https://docs.alliancecan.ca/wiki/Nibi) | 8 | `--ntasks-per-node=8 --mem=0` |
+| [Fir](https://docs.alliancecan.ca/wiki/Fir) | 4 | `--ntasks-per-node=4 --mem=0` |
+| [Rorqual](https://docs.alliancecan.ca/wiki/Rorqual) | 4 | `--ntasks-per-node=4 --mem=0` |
+
+This post covers running Oceananigans on these clusters, from a first CPU job to multi-node
+GPU runs: installing packages, setting up CUDA-aware MPI, Slurm scripts, checking that the
+setup is correct, and scaling results. All the scripts are in the
 [Oceananigans-DRAC](https://github.com/francispoulin/Oceananigans-DRAC) repository, which
 is tested and kept up to date. Please comment below if something doesn't work.
 
-**Three things that save time on Nibi:**
+**Three things that save time:**
 
 - **Login nodes have internet access but no GPUs.** Install packages on a login node;
   `nvidia-smi` failing there is normal.
 - **Keep the Julia depot out of `$HOME`**, which has a small quota, and **set it after
   loading modules** (step 2).
-- **Multi-GPU runs need three MPI settings** (steps 3 and 7), or they crash at
-  `MPI.Init()`, typically as soon as NetCDF output is involved.
+- **Multi-GPU runs need Julia to use the system OpenMPI throughout** (step 3, plus
+  `OPAL_PREFIX`, set by `env/drac.sh`; see step 7). Otherwise they crash at `MPI.Init()`,
+  typically as soon as NetCDF output is involved.
+  
 
 ## 1. Get the scripts
 
@@ -30,13 +37,22 @@ git clone https://github.com/francispoulin/Oceananigans-DRAC.git
 cd Oceananigans-DRAC
 ```
 
+Tell Slurm which allocation to charge, once, in your `~/.bashrc`:
+
+```bash
+export SBATCH_ACCOUNT=def-yourpi     # your group's allocation
+export SALLOC_ACCOUNT=$SBATCH_ACCOUNT
+```
+
+The commands below assume this is set; otherwise add `--account=def-yourpi` to each `sbatch`.
+
 ## 2. Environment and Julia depot
 
 Every step uses `env/drac.sh`, which loads the modules (`StdEnv/2023`, `gcc/12.3`,
 `openmpi/4.1.5`, `cuda/12.6`, `julia/1.10.10`) and sets the Julia depot: the folder where
 packages and compiled code are stored. It is `$SCRATCH/julia_depot` unless you set
-`JULIA_DEPOT_PATH` before sourcing the file. `module purge` leaves a few "sticky" modules
-loaded and lists them; that's expected.
+`JULIA_DEPOT_PATH` before sourcing the file.
+It starts with `module --force purge`, so modules loaded at login (including "sticky" ones) don't leak into jobs.
 
 **Why the depot needs care on DRAC clusters.** The `julia` module runs
 `append_path("JULIA_DEPOT_PATH", ":")`, so every time it is loaded it adds a colon to the
@@ -138,7 +154,9 @@ sbatch --account=def-YOURPI --nodes=1 --ntasks-per-node=8 --mem=0 jobs/checks.sh
 sbatch --account=def-YOURPI --nodes=2 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # two nodes
 ```
 
-Use `--mem=0` (all of a node's memory) when using all 8 GPUs of a node.
+These are for Nibi (8 GPUs per node). On Fir and Rorqual use `--ntasks-per-node=4`: a full
+node is `--nodes=1 --ntasks-per-node=4 --mem=0`, two nodes are `--nodes=2`. Use `--mem=0`
+(all of a node's memory) whenever you use all of a node's GPUs.
 
 | Check | What it tests | Pass means |
 | --- | --- | --- |
@@ -179,12 +197,13 @@ Two things that may look wrong but aren't:
   and are harmless. Only the runtime (`libmpi.so`, `libopen-pal`, `libopen-rte`) and the
   `mca_*` plugins must come from `/cvmfs`.
 
+
 ## 7. Using MPI in your own scripts
 
-The setup handles the system MPI and the `OpenMPI_jll` redirect. One more step goes in your
-own scripts: **`OPAL_PREFIX` must be reset before MPI starts.** Even when redirected,
-`OpenMPI_jll` sets the environment variable `OPAL_PREFIX` to its own folder when it loads,
-and overwrites any existing value. The system OpenMPI then loads Julia's plugins at
+Source `env/drac.sh` in your job scripts (copy `jobs/checks.sh` and replace the checks with
+your own script) and MPI needs nothing else. The trap it avoids: packages that write NetCDF
+or HDF5 load `OpenMPI_jll`, which sets the environment variable `OPAL_PREFIX` to its own
+folder unless it is already set. The system OpenMPI then loads Julia's plugins at
 `MPI.Init()` and crashes:
 
 ```
@@ -192,9 +211,10 @@ symbol lookup error: .../artifacts/.../lib/openmpi/mca_pmix_pmix3x.so:
 undefined symbol: opal_libevent2022_evthread_use_pthreads
 ```
 
-`src/drac_mpi.jl` fixes this: it points `OPAL_PREFIX` at the OpenMPI installation whose
-library is actually loaded, then initializes MPI. Call it after your `using` lines and
-before anything that starts MPI:
+`env/drac.sh` presets `OPAL_PREFIX` to the system OpenMPI, and `OpenMPI_jll` 4.1.10 and
+later keep it (`checks/no_opal_reset.jl` tests this). If you start Julia some other way,
+call `drac_mpi_init()` after your `using` lines and before anything that starts MPI. It
+resets `OPAL_PREFIX` and is harmless otherwise:
 
 ```julia
 using Oceananigans, CUDA, NCDatasets
@@ -204,11 +224,7 @@ drac_mpi_init()
 arch = Distributed(GPU())
 ```
 
-(`OCEANANIGANS_DRAC_ROOT` is set by `env/drac.sh`.) For a job script, copy
-`jobs/checks.sh` and replace the checks with your own script.
 
-If your runs write only JLD2 output and never load NetCDF packages, `OpenMPI_jll` isn't
-loaded and this step isn't needed, but it's harmless.
 
 ## 8. Scaling on Nibi
 
@@ -267,13 +283,13 @@ sbatch --account=def-YOURPI --job-name=b8_gpu16 --nodes=2 --ntasks-per-node=8 --
 Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s for 1/4°,
 1/8°, 1/16° and 1/32°).
 
-   ## 9. Known issues, now fixed upstream
+## 9. Known issues, now fixed upstream
 
-   - **`OPAL_PREFIX` and NetCDF** (step 7): `OpenMPI_jll` overwrote `OPAL_PREFIX` even when its
+- **`OPAL_PREFIX` and NetCDF** (step 7): `OpenMPI_jll` overwrote `OPAL_PREFIX` even when its
      library was redirected to a system OpenMPI, which crashed multi-GPU runs writing NetCDF
      output ([Yggdrasil issue #14991](https://github.com/JuliaPackaging/Yggdrasil/issues/14991)).
      Fixed in `OpenMPI_jll` 4.1.10.  `get!` keeps an existing `OPAL_PREFIX`, which is why the env script sets it.
-   - **GPU memory missing in distributed benchmark results:** the benchmark suite recorded memory
+- **GPU memory missing in distributed benchmark results:** the benchmark suite recorded memory
      only for single-GPU runs. Fixed in
      [Oceananigans pull request #6136](https://github.com/CliMA/Oceananigans.jl/pull/6136).
      
@@ -289,17 +305,27 @@ Nibi: fresh depot, setup, both hello jobs, and all checks on 2 GPUs and on 16 GP
 setup, both hello jobs, and all checks on 2 GPUs and on 8 GPUs across 2 nodes (4 per node,
 InfiniBand).
    
-## Other DRAC clusters
+## 11. Other clusters
 
-**Fir** (4 H100 GPUs per node) is tested: the setup, both hello jobs and all checks pass on
-2 GPUs, on a full node (4 GPUs) and across 2 nodes (8 GPUs, InfiniBand), with only the Slurm
-node options changed (`--ntasks-per-node=4`, `--mem=0` for a full node). Rorqual has the same
-node layout and should work the same way. Trillium is run by SciNet and may need different job
-settings. Contributions from other clusters are welcome.
+Trillium is run by SciNet, is set up differently from the other DRAC clusters, and has not
+been tested. Contributions are welcome: a row in the table above, and an `env/<cluster>.sh`
+if the modules differ.
 
-Fir and Rorqual have 4 GPUs per node (use `--ntasks-per-node=4`, and `--mem=0` for a full
-node). Trillium is run by SciNet and may need different job settings. Testing on these is
-planned; contributions are welcome as an `env/<cluster>.sh` and a section here.
+## 12. Common problems
+
+- **Logins load `StdEnv/2020`, or modules conflict.** A stale `~/.modulerc` (for example
+  `module-version StdEnv/2020 default`) changes the default environment: delete it. Old
+  `module load` or `LD_LIBRARY_PATH` lines in `~/.bashrc` cause similar trouble, and a
+  manually set `LD_LIBRARY_PATH` survives `module purge`.
+- **Precompiling on a login node fails with `EAGAIN`.** Login nodes can show many cores
+  (192 on Rorqual), and Julia starts too many workers. `setup/setup.sh` sets
+  `JULIA_NUM_PRECOMPILE_TASKS=2 OPENBLAS_NUM_THREADS=1`; do the same when precompiling by hand.
+- **`Out of GPU memory` when the CUDA context is created, before any work.** If the same job
+  runs on other nodes, the node is faulty. Find it with `sacct -j <jobid> -o JobID,NodeList`,
+  resubmit with `sbatch --exclude=<node> ...`, and report it to
+  support@tech.alliancecan.ca. There is no `SBATCH_` environment variable for `--exclude`;
+  put it on the command line or in an `#SBATCH` line.
+  
 
 ## Authors
 

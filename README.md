@@ -29,7 +29,7 @@ sbatch --account=def-YOURPI jobs/hello_gpu.sh
 sbatch --account=def-YOURPI --nodes=1 --ntasks-per-node=2 jobs/checks.sh
 ```
 
-The full walkthrough is [docs/nibi.md](docs/nibi.md), which is also posted in the
+The full walkthrough is [docs/drac.md](docs/drac.md), which is also posted in the
 Oceananigans Discussions (TODO: link).
 
 ## What's here
