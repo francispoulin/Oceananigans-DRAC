@@ -279,15 +279,16 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
      
 ## 10. Tested with
 
-| Date | Julia | Oceananigans | CUDA.jl | MPI.jl | OpenMPI_jll | Modules |
-| --- | --- | --- | --- | --- | --- | --- |
-| 2026-10-02 | 1.10.10 | 0.113.5 | 6.4.1 | 0.20.27 | 4.1.9 | StdEnv/2023, gcc/12.3, openmpi/4.1.5, cuda/12.6, julia/1.10.10 |
+| Cluster | Date | Julia | Oceananigans | CUDA.jl | MPI.jl | OpenMPI_jll | Modules |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Nibi | 2026-10-02 | 1.10.10 | 0.113.5 | 6.4.1 | 0.20.27 | 4.1.9 | StdEnv/2023, gcc/12.3, openmpi/4.1.5, cuda/12.6, julia/1.10.10 |
+| Fir | 2026-10-04 | 1.10.10 | 0.113.5 | 6.4.1 | 0.20.27 | 4.1.10 | same as above |
 
-Verified from scratch: fresh depot, setup, both hello jobs, and all checks on 2 GPUs and on
-16 GPUs across 2 nodes. The benchmarks used Oceananigans 0.113.5 with CUDA.jl 6.1.0.
-
-## Other DRAC clusters
-
+Nibi: fresh depot, setup, both hello jobs, and all checks on 2 GPUs and on 16 GPUs across
+2 nodes (before the move to OpenMPI_jll 4.1.10; to be rechecked). Fir: fresh clone and depot,
+setup, both hello jobs, and all checks on 2 GPUs and on 8 GPUs across 2 nodes (4 per node,
+InfiniBand).
+   
 ## Other DRAC clusters
 
 **Fir** (4 H100 GPUs per node) is tested: the setup, both hello jobs and all checks pass on

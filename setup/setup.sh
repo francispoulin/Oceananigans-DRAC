@@ -47,3 +47,6 @@ julia --project=. -e 'using Pkg; Pkg.precompile()'
 echo
 echo "Setup done. The libmpi_path above must be under /cvmfs, not in your Julia depot."
 echo "Next: sbatch jobs/hello_cpu.sh, then jobs/hello_gpu.sh, then jobs/checks.sh"
+
+echo "== 5. Check that the main packages load"
+julia --project=. -e 'using Oceananigans, CUDA, MPI, NCDatasets; println("   imports OK")'
