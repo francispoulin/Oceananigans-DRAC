@@ -12,6 +12,10 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 source env/drac.sh
+
+export JULIA_NUM_PRECOMPILE_TASKS=${JULIA_NUM_PRECOMPILE_TASKS:-2}
+export OPENBLAS_NUM_THREADS=1
+
 set -eo pipefail          # after loading modules, as module commands can return harmless errors
 
 # The system OpenMPI library. Alliance modules don't set LD_LIBRARY_PATH, so Julia can't find
