@@ -32,6 +32,7 @@ is tested and kept up to date. Please comment below if something doesn't work.
 ## 1. Get the scripts
 
 ```bash
+
 cd /project/<group>/$USER      # project space (step 2), or $HOME; not $SCRATCH, which is purged
 git clone https://github.com/francispoulin/Oceananigans-DRAC.git
 cd Oceananigans-DRAC
@@ -64,6 +65,7 @@ lines:
 ```bash
 export JULIA_DEPOT_PATH=/project/<group>/<user>/julia_depot
 ```
+Log in again (or run `source ~/.bashrc`) before step 3, and check with `echo $JULIA_DEPOT_PATH`.
 
 **Why the order matters.** The `julia` module runs `append_path("JULIA_DEPOT_PATH", ":")`,
 so every time it is loaded it adds a colon to the depot path. Julia reads empty entries in
@@ -280,7 +282,6 @@ Efficiency is relative to the smallest GPU count at each resolution.
 | 1/4° | 1 | 1 | 1.0114 | 100% |
 | 1/8° | 4 | 1 | 1.0364 | 97.6% |
 | 1/16° | 16 | 2 | 1.0526 | 96.1% |
-| 1/32° | 64 | 8 | pending | |
 
 Within one node, efficiency stays above 87%. A fixed-size problem scales well across nodes
 as long as each GPU keeps enough work: at 1/4°, 32 GPUs leave only 45 columns each, while
@@ -290,10 +291,11 @@ per cell (plus halo overhead), so one H100 holds up to about 300 million cells. 
 `results/nibi_scaling.md`.
 
 **Running the benchmark suite.** `jobs/benchmark.sh` runs the suite in an Oceananigans
-checkout (its `benchmarking/` folder, set with `BENCH_DIR`). That folder has its own Julia
-environment, which needs the same MPI setup as step 3 (system MPI with `extra_paths`,
-`OpenMPI_jll` at 4.1 and redirected) `jobs/benchmark.sh` sources `env/drac.sh`,
-so no `OPAL_PREFIX` reset is needed. Grid size and time step are set with environment variables,
+checkout (its `benchmarking/` folder, set with `BENCH_DIR`). 
+That folder has its own Julia environment, so give it the same MPI setup with
+`bash setup/configure_mpi.sh /path/to/Oceananigans.jl/benchmarking` (step 7).
+`jobs/benchmark.sh` sources `env/drac.sh`, so no `OPAL_PREFIX` reset is needed.
+Grid size and time step are set with environment variables,
 for example:
 
 ```bash
@@ -309,7 +311,7 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
 - **`OPAL_PREFIX` and NetCDF** (step 7): `OpenMPI_jll` overwrote `OPAL_PREFIX` even when its
   library was redirected to a system OpenMPI, which crashed multi-GPU runs writing NetCDF
   output ([Yggdrasil issue #14991](https://github.com/JuliaPackaging/Yggdrasil/issues/14991)).
-  Fixed in `OpenMPI_jll` 4.1.10.  `get!` keeps an existing `OPAL_PREFIX`, which is why the env script sets it.
+  Fixed in `OpenMPI_jll` 4.1.10.  Since that release, `OpenMPI_jll` keeps an existing `OPAL_PREFIX`, which is why `env/drac.sh` sets it.
 - **GPU memory missing in distributed benchmark results:** the benchmark suite recorded memory
   only for single-GPU runs. Fixed in
   [Oceananigans pull request #6136](https://github.com/CliMA/Oceananigans.jl/pull/6136).
