@@ -31,7 +31,9 @@ julia --project="$PROJECT_DIR" -e '
     end
     "OpenMPI_jll" in deps || Pkg.add(name="OpenMPI_jll", version="4.1.10")
     Pkg.compat("OpenMPI_jll", "~4.1.10")
-    Pkg.resolve()
+    # An existing Manifest may hold an older OpenMPI_jll that the new compat excludes;
+    # Pkg.resolve would keep it and fail, so update that one package.
+    Pkg.update("OpenMPI_jll")
     Pkg.instantiate()'
 
 echo "== 2. MPI.jl -> system OpenMPI ($DRAC_MPILIB_DIR)"

@@ -36,9 +36,11 @@ ARGS=(
 if [[ -n "$DT" ]]; then
     ARGS+=( --dt="$DT" )
 fi
+
+PARTITION=${PARTITION:-${NGPU}x1x1}   # default: split in x only; e.g. PARTITION=8x8x1 for 2D
 if (( NGPU > 1 )); then
-    # Split in x only: Nx must be divisible by the number of GPUs.
-    ARGS+=( --distributed --partition="${NGPU}x1x1" )
+    # Nx (and Ny, for a 2D split) must be divisible by the number of ranks in that direction.
+    ARGS+=( --distributed --partition="$PARTITION" )
 fi
 
 echo "Job ${SLURM_JOB_ID}: ${NGPU} GPU(s) on ${SLURM_JOB_NUM_NODES} node(s), size ${SIZE}"
