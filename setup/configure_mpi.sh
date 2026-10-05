@@ -26,7 +26,7 @@ echo "== 1. Packages in $PROJECT_DIR"
 julia --project="$PROJECT_DIR" -e '
     using Pkg
     deps = keys(Pkg.project().dependencies)
-    for p in ("MPIPreferences", "Preferences")
+    for p in ("MPIPreferences", "Preferences", "MPI")
         p in deps || Pkg.add(p)
     end
     "OpenMPI_jll" in deps || Pkg.add(name="OpenMPI_jll", version="4.1.10")
