@@ -14,7 +14,7 @@
 #SBATCH --job-name=viz
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=32G
+#SBATCH --mem=32000M
 #SBATCH --time=3:00:00
 #SBATCH --output=%x_%j.out
 

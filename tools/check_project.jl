@@ -67,7 +67,8 @@ end
 
 if !is_viz
     depot = first(split(get(ENV, "JULIA_DEPOT_PATH", joinpath(homedir(), ".julia")), ':'))
-    installed = isdir(joinpath(depot, "packages", "CairoMakie"))   # Manifest alone may be from git
+    # Both needed: the Manifest may come from git, and packages may be left from another install.
+    installed = isfile(joinpath(vizdir, "Manifest.toml")) && isdir(joinpath(depot, "packages", "CairoMakie"))
     if !isdir(vizdir)
         info("viz/ not found in the repository")
     elseif !installed
