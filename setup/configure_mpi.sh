@@ -14,11 +14,10 @@ if [[ -z "$1" || ! -f "$1/Project.toml" ]]; then
     echo "usage: bash configure_mpi.sh <folder containing Project.toml>"; exit 1
 fi
 PROJECT_DIR="$(cd "$1" && pwd)"
-source "$DRAC_ROOT/env/drac.sh"
+source "$DRAC_ROOT/env/ocean_setup.sh"
 set -eo pipefail
-export JULIA_NUM_PRECOMPILE_TASKS=${JULIA_NUM_PRECOMPILE_TASKS:-2}
 export OPENBLAS_NUM_THREADS=1
-export DRAC_MPILIB_DIR="$EBROOTOPENMPI/lib"
+export DRAC_MPILIB_DIR="$OCEAN_MPI_ROOT/lib"
 export DRAC_LIBMPI="$DRAC_MPILIB_DIR/libmpi.so"
 [[ -f "$DRAC_LIBMPI" ]] || { echo "ERROR: cannot find '$DRAC_LIBMPI'. Is the openmpi module loaded?"; exit 1; }
 
@@ -49,4 +48,4 @@ julia --project="$PROJECT_DIR" -e 'using OpenMPI_jll; println("   libmpi_path = 
 
 echo "== 4. Precompile and check"
 julia --project="$PROJECT_DIR" -e 'using Pkg; Pkg.precompile(); using MPI; println("   imports OK")'
-echo "Done. libmpi_path above must be under /cvmfs. Commit Project.toml and Manifest.toml, not LocalPreferences.toml."
+echo "Done. libmpi_path above must be under $OCEAN_MPI_ROOT. Commit Project.toml and Manifest.toml, not LocalPreferences.toml."

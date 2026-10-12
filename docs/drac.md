@@ -24,6 +24,9 @@ is tested and kept up to date. Please comment below if something doesn't work.
   `nvidia-smi` failing there is normal.
 - **Keep the Julia depot and your clones off `$SCRATCH`**, which is purged, and **set the
   depot after loading modules** (step 2).
+- **Precompile at most two packages at a time on login nodes.** The default (one per core)
+  starts more threads than a login node allows and crashes with `Resource temporarily
+  unavailable`. `env/drac.sh` sets `JULIA_NUM_PRECOMPILE_TASKS=2`.
 - **Multi-GPU runs need Julia to use the system OpenMPI throughout** (step 3, plus
   `OPAL_PREFIX`, set by `env/drac.sh`; see step 7). Otherwise they crash at `MPI.Init()`,
   typically as soon as NetCDF output is involved.
@@ -249,6 +252,36 @@ srun --cpu-bind=none julia --project=. my_simulation.jl
 ```
 
 Because `env/drac.sh` sets the depot, the project reuses the packages that step 3 installed.
+
+`env/ocean_setup.sh` sources `env/drac.sh` on the Alliance clusters and the matching file on
+other machines, so a job script that sources `ocean_setup.sh` works unchanged elsewhere. To check
+a project's setup (wrong folder, missing `LocalPreferences.toml`, MPI from another machine, ...):
+
+```bash
+bash $OCEANANIGANS_DRAC_ROOT/tools/check_env.sh /path/to/your/project
+```
+
+### Plotting: the `viz` environment
+
+Keep CairoMakie out of your simulation project: every job would compile it, and its version
+constraints would hold back Oceananigans and CUDA updates. `viz/` is a separate environment with
+CairoMakie and NCDatasets only (no Oceananigans, no MPI), for scripts that read NetCDF output.
+Once per cluster, on a login node:
+
+```bash
+bash setup/setup_viz.sh
+```
+
+With Julia 1.10, Pkg warns `Circular dependency detected ... CairoMakie` and compiles
+CairoMakie on its first use instead (several minutes, once): do that first run in a job.
+Run plotting scripts from your project folder, in a CPU job:
+
+```bash
+sbatch $OCEANANIGANS_DRAC_ROOT/jobs/viz.sh scripts/make_movies.jl
+```
+
+or interactively with `julia --project=$OCEANANIGANS_DRAC_ROOT/viz scripts/make_movies.jl`.
+CairoMakie needs no display, and `record` writes mp4 files with its own FFMPEG.
 
 ## 8. Scaling on Nibi
 

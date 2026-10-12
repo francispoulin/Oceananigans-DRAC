@@ -6,3 +6,4 @@ LocalPreferences.toml
 *.nc
 *.jld2
 results/raw/
+logs/

@@ -19,9 +19,14 @@ module load openmpi/4.1.5
 module load cuda/12.6
 module load julia/1.10.10
 
+export OCEAN_MACHINE="${CC_CLUSTER:-alliance}"
+
+# The system OpenMPI (the setup scripts use this, not the Alliance-specific $EBROOTOPENMPI).
+export OCEAN_MPI_ROOT="$EBROOTOPENMPI"
+
 # OpenMPI_jll >= 4.1.10 keeps OPAL_PREFIX if it is already set. Pointing it at the system
 # OpenMPI makes MPI.Init() load the system plugins even when NetCDF loads OpenMPI_jll.
-export OPAL_PREFIX="$EBROOTOPENMPI"
+export OPAL_PREFIX="$OCEAN_MPI_ROOT"
 
 # Root of this repository (the folder containing env/), for scripts that need it.
 export OCEANANIGANS_DRAC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -35,6 +40,10 @@ unset _drac_depot
 
 # One CPU thread per rank is enough when the work is on the GPU.
 export JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-1}"
+
+# Precompile at most 2 packages at a time. The default (one per core) starts so many linker
+# threads that login nodes refuse them ("Resource temporarily unavailable").
+export JULIA_NUM_PRECOMPILE_TASKS="${JULIA_NUM_PRECOMPILE_TASKS:-2}"
 
 echo "Oceananigans-DRAC environment (${CC_CLUSTER:-unknown cluster}): repo=$OCEANANIGANS_DRAC_ROOT, depot=$JULIA_DEPOT_PATH"
 

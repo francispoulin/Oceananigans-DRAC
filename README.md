@@ -40,22 +40,50 @@ Oceananigans Discussions (https://github.com/CliMA/Oceananigans.jl/discussions/6
 
 | Path | Contents |
 | --- | --- |
-| `env/drac.sh` | Modules and environment, sourced by setup and every job |
+| `env/ocean_setup.sh` | Sourced by setup and every job; picks the machine's env file (`env/README.md`) |
+| `env/drac.sh` | Modules and environment for the Alliance clusters |
+| `env/fluidsgpu.sh` | The same for the Waterloo fluids group's servers (pelee, rondeau; no Slurm) |
 | `setup/setup.sh` | One-time setup: packages, system MPI, OpenMPI_jll redirect |
+| `setup/configure_mpi.sh` | The MPI part of the setup, for your own project folder |
+| `setup/setup_viz.sh` | One-time setup of `viz/`, the plotting environment (CairoMakie, NCDatasets) |
+| `viz/` | Plotting environment, kept separate so simulations never load Makie |
+| `tools/check_env.sh` | Checks the environment and a project, and says what looks wrong |
+| `tools/run_local.sh` | Background runs on free GPUs, with a log, on machines without Slurm |
 | `src/drac_mpi.jl` | `drac_mpi_init()`: starts MPI safely when NetCDF is loaded |
 | `examples/` | A first Oceananigans script, on CPU or GPU |
-| `jobs/` | Slurm scripts: hello on CPU and GPU, multi-GPU checks, benchmarks |
+| `jobs/` | Slurm scripts: hello on CPU and GPU, multi-GPU checks, benchmarks, plotting (`viz.sh`) |
 | `checks/` | Single MPI, CUDA-aware MPI, distributed vs single-GPU, NetCDF/JLD2 output |
 | `results/` | Scaling results |
 | `docs/` | Cluster guides |
 
 `LocalPreferences.toml` is written by `setup/setup.sh` on each machine and is not under
-version control. `Project.toml` and `Manifest.toml` records the tested package versions.
+version control. `Project.toml` and `Manifest.toml` record the tested package versions.
+
+## Everyday use
+
+Add one alias to `~/.bashrc` on each machine (only the path differs):
+
+```bash
+alias ocean_setup='source /path/to/Oceananigans-DRAC/env/ocean_setup.sh'
+alias check_env='bash $OCEANANIGANS_DRAC_ROOT/tools/check_env.sh'
+```
+
+Then, in any project folder:
+
+```bash
+ocean_setup                     # modules, depot, MPI, for this machine
+check_env                       # anything wrong with the environment or this project?
+julia --project=$OCEANANIGANS_DRAC_ROOT/viz scripts/make_movies.jl      # plots, with viz/
+```
+
+Plotting jobs on the Alliance: `sbatch $OCEANANIGANS_DRAC_ROOT/jobs/viz.sh scripts/make_movies.jl`.
+On pelee and rondeau, see [docs/fluidsgpu.md](docs/fluidsgpu.md).
 
 ## Contributing
 
-Corrections and other clusters are welcome: open an issue or a pull request. A new cluster
-needs an `env/<cluster>.sh` and a row in `docs/drac.md`.
+Corrections and other clusters are welcome: open an issue or a pull request. A new machine
+needs an `env/<machine>.sh` providing the variables in [env/README.md](env/README.md), and a case
+in `env/ocean_setup.sh`.
 
 ## License
 

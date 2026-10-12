@@ -11,18 +11,17 @@
 # It writes LocalPreferences.toml (machine-specific, so not under version control).
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-source env/drac.sh
+source env/ocean_setup.sh
 
-export JULIA_NUM_PRECOMPILE_TASKS=${JULIA_NUM_PRECOMPILE_TASKS:-2}
 export OPENBLAS_NUM_THREADS=1
 
 set -eo pipefail          # after loading modules, as module commands can return harmless errors
 
-# The system OpenMPI library. Alliance modules don't set LD_LIBRARY_PATH, so Julia can't find
-# libmpi by searching; we pass its folder explicitly.
-MPILIB_DIR="$EBROOTOPENMPI/lib"
+# The system OpenMPI library (OCEAN_MPI_ROOT is set by the env file). Alliance modules don't
+# set LD_LIBRARY_PATH, so Julia can't find libmpi by searching; we pass its folder explicitly.
+MPILIB_DIR="$OCEAN_MPI_ROOT/lib"
 LIBMPI="$MPILIB_DIR/libmpi.so"
-if [[ -z "$EBROOTOPENMPI" || ! -f "$LIBMPI" ]]; then
+if [[ -z "$OCEAN_MPI_ROOT" || ! -f "$LIBMPI" ]]; then
     echo "ERROR: cannot find the system libmpi ('$LIBMPI'). Is the openmpi module loaded?"
     exit 1
 fi
@@ -49,7 +48,7 @@ echo "== 4. Precompile"
 julia --project=. -e 'using Pkg; Pkg.precompile()'
 
 echo
-echo "Setup done. The libmpi_path above must be under /cvmfs, not in your Julia depot."
+echo "Setup done. The libmpi_path above must be the system OpenMPI ($OCEAN_MPI_ROOT), not in your Julia depot."
 echo "Next: sbatch jobs/hello_cpu.sh, then jobs/hello_gpu.sh, then jobs/checks.sh"
 
 echo "== 5. Check that the main packages load"

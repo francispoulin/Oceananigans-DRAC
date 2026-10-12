@@ -10,7 +10,7 @@
 #SBATCH --output=%x_%j.out
 
 cd "$SLURM_SUBMIT_DIR"
-source env/drac.sh
+source env/ocean_setup.sh
 set -eo pipefail          # after loading modules, as module commands can return harmless errors
 nvidia-smi -L
 nvidia-smi --query-gpu=name,memory.used,memory.total --format=csv
