@@ -8,14 +8,16 @@
 _fluids_depot="${JULIA_DEPOT_PATH%%:*}"      # remember the user's depot before loading modules
 
 # ---- MACHINE-SPECIFIC ------------------------------------------------------------------
-# TODO(verify on pelee): module names, and whether a purge is needed/safe here.
+# Modules as on pelee, Oct 2026 (`module avail`). Load cuda/12.3.2 explicitly: the default
+# cuda is 13.3.1, but the CUDA-aware OpenMPI was used with 12.3.2.
 module purge >/dev/null 2>&1
+module load cuda/12.3.2
 module load openmpi/4.1.7-with-cuda          # CUDA-aware OpenMPI built for the group
 module load julia/1.10.8                     # 1.10.10 on the Alliance; same 1.10 series
 
-# Default depot for this machine (shared drive, visible from both pelee and rondeau).
-# Override by setting JULIA_DEPOT_PATH before sourcing.
-_fluids_default_depot="$HOME/julia_depot"    # TODO(verify): is $HOME on the shared drive?
+# Default depot if JULIA_DEPOT_PATH is not set before sourcing (e.g. in ~/.bashrc).
+# $HOME (/u/<user>) is the same on pelee and rondeau.
+_fluids_default_depot="$HOME/julia_depot"
 # ----------------------------------------------------------------------------------------
 
 export OCEAN_MACHINE="$(hostname -s)"
