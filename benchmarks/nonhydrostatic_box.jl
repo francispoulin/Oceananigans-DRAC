@@ -148,15 +148,40 @@ end
 local_ok = all(isfinite, interior(model.velocities.u)) && all(isfinite, interior(model.tracers.b))
 all_ok   = MPI.Allreduce(local_ok ? 1 : 0, MPI.MIN, comm) == 1
 
-memory = use_gpu ? Float64(CUDA.total_memory() - CUDA.free_memory()) : 0.0   # whole device
+# GPU memory of THIS process (from nvidia-smi), and whether another process shares our GPU.
+# (The whole-device figure would include other users' jobs: pelee/rondeau have no scheduler.)
+function gpu_usage()
+    use_gpu || return 0.0, false
+    mine, others = NaN, false
+    uuid = string(CUDA.uuid(CUDA.device()))
+    try
+        out = read(`nvidia-smi --query-compute-apps=pid,gpu_uuid,used_memory --format=csv,noheader,nounits`, String)
+        for line in split(out, '\n')
+            f = strip.(split(line, ','))
+            length(f) == 3 || continue
+            occursin(lowercase(uuid), lowercase(f[2])) || continue
+            if parse(Int, f[1]) == getpid()
+                mine = parse(Float64, f[3]) * 2^20
+            else
+                others = true
+            end
+        end
+    catch
+    end
+    isnan(mine) && (mine = Float64(CUDA.total_memory() - CUDA.free_memory()))   # fallback: whole device
+    return mine, others
+end
+memory, shared = gpu_usage()
 memory = MPI.Allreduce(memory, MPI.MAX, comm)
+shared = MPI.Allreduce(shared ? 1 : 0, MPI.MAX, comm) == 1
+shared && say("WARNING: another process was using one of our GPUs: timings and memory are not reliable")
 
 tmin, tmed, tmax = minimum(times), median(times), maximum(times)
 ncells = Nx * Ny * Nz
 gpu    = use_gpu ? CUDA.name(CUDA.device()) : "CPU"
 
-say(@sprintf("RESULT nh solver=%s size=%dx%dx%d gpus=%d weak=%s float=%s t_step_min=%.5f t_step_median=%.5f t_step_max=%.5f cells_per_s=%.3e mem_GiB=%.2f finite=%s gpu=\"%s\"",
-             solver, Nx, Ny, Nz, nranks, weak, FT, tmin, tmed, tmax, ncells / tmin, memory / 2^30, all_ok, gpu))
+say(@sprintf("RESULT nh solver=%s size=%dx%dx%d gpus=%d weak=%s float=%s t_step_min=%.5f t_step_median=%.5f t_step_max=%.5f cells_per_s=%.3e mem_GiB=%.2f finite=%s shared_gpu=%s gpu=\"%s\"",
+             solver, Nx, Ny, Nz, nranks, weak, FT, tmin, tmed, tmax, ncells / tmin, memory / 2^30, all_ok, shared, gpu))
 
 if rank == 0
     stamp  = Dates.format(now(), "yyyymmdd-HHMMSS")
@@ -181,6 +206,7 @@ if rank == 0
         "grid_points_per_second"       => string(ncells / tmin),
         "gpu_memory_used"              => string(memory),
         "finite"                       => string(all_ok),
+        "shared_gpu"                   => string(shared),
         "gpu_name"                     => q(gpu),
         "julia_version"                => q(VERSION),
         "oceananigans_version"         => q(pkgversion(Oceananigans)),

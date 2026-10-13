@@ -35,13 +35,19 @@ was tested and with which versions. One log per test in `logs/`.
 | `nh_ft` | 1 | NonhydrostaticModel, stretched z, Fourier-tridiagonal solver |
 | `viz` | CPU | viz environment: NetCDF read, PNG and MP4 with CairoMakie |
 
+## Scope
+
+These tests check the **platform**: environment, MPI, CUDA, Oceananigans and the other libraries,
+and `viz`. They never depend on a simulation repository. Simulation physics and regressions
+(e.g. BalancedFlows' vortex and jet gates) are tested in those repositories, which may run
+`check_env` first and assume the platform works.
+
 ## To add (the list grows as needed)
 
-- Nonhydrostatic distributed vs single GPU (as `hydrostatic`), and Fourier-tridiagonal on 2, 4 GPUs.
-- Checkpoint and restart (pickup) gives the same answer as an uninterrupted run.
+- Distributed hydrostatic model in a box **bounded in x, y and z** (as the vortex), 1 vs 2 and 4 GPUs.
+- **Checkpoint and restart** (pickup) on 1 and on several GPUs gives the same answer as an
+  uninterrupted run.
+- Nonhydrostatic distributed vs single GPU (as `hydrostatic`), and Fourier-tridiagonal on 2 and 4 GPUs.
 - Performance: the hydrostatic and nonhydrostatic benchmarks within a few % of stored numbers.
-- Simulation repos (once merged): jet bitwise reproduction of `v1.0-multigpu` (128³, 1 and 4 GPUs);
-  vortex `BG_4km_U02_balanced_1e-2` norms over 20 days and the balance test; movie and growth
-  scripts on a small stored run.
-- NumericalEarth / sea ice: a short coupled run when that component is in use.
+- NumericalEarth / ClimaSeaIce load and a short coupled run (library-level, a generic box).
 - Across nodes (Alliance): the multi-GPU tests on 2 nodes.
