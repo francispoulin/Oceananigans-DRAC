@@ -36,6 +36,28 @@ Good comparisons: FFT vs FourierTridiagonal at the same size (the stretched-z so
 Beaufort Gyre or Gulf Stream nonhydrostatic run would use), and the same box with the hydrostatic
 model (`earth_ocean` case of the Oceananigans suite) for the cost of going nonhydrostatic.
 
+### Where the time goes: `--parts=true`
+
+Adds a second line, `RESULT nhparts`, with the pieces of a step timed separately: the pressure
+solve alone (3 per RK3 step), the pair of transposes it does on several GPUs (pack, MPI Alltoall,
+unpack), one halo fill of u, v, w, and the rest of the step (`t_step - 3 t_solve`). Comparing 1
+and 2 GPUs shows whether the lost time is in the distributed Poisson solver or in the rest of the model.
+
+```bash
+cd $OCEANANIGANS_DRAC_ROOT
+for n in 1 2; do
+    for s in FFT FourierTridiagonal; do
+        bash tools/run_local.sh --wait -n $n -j nhparts_${s}_${n}gpu benchmarks/nonhydrostatic_box.jl --solver=$s --parts=true --windows=3 || break 2
+    done
+done
+grep -ah "^RESULT nhparts" logs/nhparts_*.out
+```
+
+How to read it: if 2 GPUs scaled perfectly, `t_solve` and `t_rest` would each halve. With an
+x-split, `t_solve(2) - t_solve(1)/2` is the solver's overhead, of which `t_transposes_ms` is the
+communication part (`alltoall_bandwidth.jl` alone gave ~6.9 ms per solve on pelee); the remainder
+is the extra FFT work (three 1-D transforms plus a permutation instead of one batched 2-D FFT).
+
 ## `alltoall_bandwidth.jl`
 
 Times only the GPU-to-GPU `MPI_Alltoall` that each transpose of the distributed Poisson solvers

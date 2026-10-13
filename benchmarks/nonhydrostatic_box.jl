@@ -31,6 +31,9 @@
 #   --output=            JSON file (default results/raw/nh_<solver>_<size>_<n>gpu_<date>.json;
 #                        results/raw/ is not under version control)
 #   --device=GPU         GPU | CPU
+#   --parts=false        true: after the step timing, also time the pieces of a step (pressure solve
+#                        alone, the pair of distributed transposes, one halo fill of u, v, w) and
+#                        print a second line "RESULT nhparts ..." (see benchmarks/README.md)
 #
 # Prints one line starting with "RESULT" (easy to grep) and writes a JSON file (rank 0).
 
@@ -43,7 +46,7 @@ using Printf, Dates, Statistics
 function parse_options(args)
     opts = Dict("size" => "512x512x256", "weak" => "false", "solver" => "FFT", "float" => "Float64",
                 "steps" => "100", "windows" => "5", "warmup" => "10", "dt" => "0",
-                "output" => "", "device" => "GPU")
+                "output" => "", "device" => "GPU", "parts" => "false")
     for a in args
         m = match(r"^--([a-z_]+)=(.*)$", a)
         m === nothing && error("bad argument '$a' (use --name=value)")
@@ -58,6 +61,7 @@ solver   = opts["solver"]
 solver in ("FFT", "FourierTridiagonal", "ConjugateGradient") || error("--solver must be FFT, FourierTridiagonal or ConjugateGradient")
 FT       = opts["float"] == "Float32" ? Float32 : opts["float"] == "Float64" ? Float64 : error("--float must be Float64 or Float32")
 weak     = lowercase(opts["weak"]) in ("true", "1", "yes")
+parts    = lowercase(opts["parts"]) in ("true", "1", "yes")
 nsteps   = parse(Int, opts["steps"])
 nwindows = parse(Int, opts["windows"])
 nwarmup  = parse(Int, opts["warmup"])
@@ -142,6 +146,46 @@ for w in 1:nwindows
     sync()
     push!(times, (time_ns() - t0) / 1e9 / nsteps)
     say(@sprintf("  window %d: %.4f s/step", w, times[end]))
+end
+
+# ---------------------------------------------------------------- pieces of a step (--parts=true)
+# An RK3 step does 3 pressure solves (one per substep). Timing the solve alone on 1 and N GPUs
+# separates the cost of the distributed Poisson solver from the rest of the model:
+#   rest of the step = t_step - 3 t_solve.
+# Each piece is repeated `--steps` times on the current state (the solve does not change the
+# velocities; the halo fill only rewrites halos), after one untimed call.
+if parts
+    NHM = Oceananigans.Models.NonhydrostaticModels
+    DC  = Oceananigans.DistributedComputations
+    psolver  = model.pressure_solver
+    pressure = model.pressures.pNHS
+
+    function time_piece(f, n)
+        f(); sync()
+        t0 = time_ns()
+        for _ in 1:n
+            f()
+        end
+        sync()
+        return (time_ns() - t0) / 1e9 / n
+    end
+
+    t_solve = time_piece(() -> NHM.solve_for_pressure!(pressure, psolver, model.free_surface,
+                                                         model.velocities, Δt), nsteps)
+    t_halo  = time_piece(() -> Oceananigans.BoundaryConditions.fill_halo_regions!(model.velocities), nsteps)
+    t_trans = NaN     # y -> x and x -> y: what one pressure solve does with an x-split
+    if nranks > 1 && hasproperty(psolver, :storage) && psolver.storage isa DC.TransposableField
+        st = psolver.storage
+        t_trans = time_piece(() -> (DC.transpose_y_to_x!(st); DC.transpose_x_to_y!(st)), nsteps)
+    end
+    t_rest = minimum(times) - 3 * t_solve
+
+    say(@sprintf("  pressure solve %.2f ms (x3 per step = %.1f ms), transposes per solve %s, halo fill u,v,w %.2f ms, rest of step %.1f ms",
+                 1e3 * t_solve, 3e3 * t_solve, isnan(t_trans) ? "n/a" : @sprintf("%.2f ms", 1e3 * t_trans),
+                 1e3 * t_halo, 1e3 * t_rest))
+    say(@sprintf("RESULT nhparts solver=%s size=%dx%dx%d gpus=%d weak=%s t_step_ms=%.2f t_solve_ms=%.3f t_transposes_ms=%.3f t_halo_uvw_ms=%.3f t_rest_ms=%.2f",
+                 solver, Nx, Ny, Nz, nranks, weak, 1e3 * minimum(times), 1e3 * t_solve,
+                 1e3 * t_trans, 1e3 * t_halo, 1e3 * t_rest))
 end
 
 # Sanity: the flow must still be finite (all ranks).
