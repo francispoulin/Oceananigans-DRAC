@@ -51,7 +51,9 @@ bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.j
 
 - picks GPUs with no running process (or exactly the ones given with `-g 0,1`) and refuses to
   start if not enough are free, showing who is using them;
-- with `-n 4`, starts 4 MPI ranks; Oceananigans' `Distributed(GPU())` gives each its own GPU;
+- with `-n 4`, starts 4 MPI ranks, each seeing only its own GPU, with
+  `JULIA_CUDA_MEMORY_POOL=none` (needed by CUDA-aware MPI; the setup verified by the Gulf Stream
+  code on pelee);
 - runs in the background, immune to logout, with output in `logs/<name>_<date-time>.out`;
 - prints the process ID: `kill <pid>` stops the run and all its ranks.
 
@@ -59,11 +61,12 @@ bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.j
 
 ## Checks
 
-Before the first multi-GPU run, run the checks with 2 and then 4 ranks:
+Before the first multi-GPU run, run the checks on 2 GPUs (then 4), from the repository root:
 
 ```bash
 cd $OCEANANIGANS_DRAC_ROOT
 for c in single_mpi cuda_aware_mpi distributed_vs_serial output; do
-    CUDA_VISIBLE_DEVICES=0,1 mpiexec -n 2 --bind-to none julia --project=. checks/$c.jl
+    bash tools/run_local.sh --wait -n 2 -j check_$c checks/$c.jl || break
 done
+grep -h "PASS\|FAIL" logs/check_*.out      # one PASS per check
 ```

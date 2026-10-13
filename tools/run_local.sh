@@ -12,14 +12,16 @@
 #   -g 0,2      use exactly these GPUs instead of picking free ones
 #   -p DIR      Julia project (default: current folder); --viz = the viz environment
 #   -j NAME     run name for the log file (default: script name)
+#   --wait      stay attached until the run ends (still logged); exit status = the run's
 #   --dry-run   show what would run, start nothing
 #
 # Output goes to logs/<name>_<date-time>.out in the current folder. The command prints the
 # process ID; stop the run with `kill <pid>` (stops all its ranks).
 #
-# With N > 1 all chosen GPUs are visible to every rank and Oceananigans' Distributed(GPU())
-# gives each rank its own (node-local rank i -> i-th visible GPU), so CUDA-aware MPI can use
-# NVLink between them.
+# With N > 1, each MPI rank sees only its own GPU (rank i -> i-th chosen GPU), and
+# JULIA_CUDA_MEMORY_POOL=none is set for every GPU run. This is the setup that the Gulf Stream
+# code verified on pelee (1 vs 4 GPUs agree to ~1e-11; jobs/gpu_wrapper.sh there): CUDA-aware
+# MPI needs the memory pool off to pass GPU buffers between processes.
 #
 # Free = no compute process on it now. Two runs started in the same second can still collide;
 # check with `nvidia-smi` if in doubt.
@@ -27,7 +29,7 @@
 set -eo pipefail
 : "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
 
-ngpu=1; gpus=""; project="$PWD"; name=""; dry=0
+ngpu=1; gpus=""; project="$PWD"; name=""; dry=0; wait_end=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -n) ngpu="$2"; shift 2 ;;
@@ -35,8 +37,9 @@ while [[ $# -gt 0 ]]; do
         -p) project="$(cd "$2" && pwd)"; shift 2 ;;
         --viz) project="$OCEANANIGANS_DRAC_ROOT/viz"; shift ;;
         -j) name="$2"; shift 2 ;;
+        --wait) wait_end=1; shift ;;
         --dry-run) dry=1; shift ;;
-        -h|--help) sed -n '2,27p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,29p' "$0"; exit 0 ;;
         -*) echo "unknown option $1 (try --help)"; exit 1 ;;
         *) break ;;
     esac
@@ -67,6 +70,7 @@ if [[ "$ngpu" -gt 0 ]]; then
         gpus="$(IFS=,; echo "${free[*]:0:$ngpu}")"
     fi
     export CUDA_VISIBLE_DEVICES="$gpus"
+    export JULIA_CUDA_MEMORY_POOL="${JULIA_CUDA_MEMORY_POOL:-none}"
 else
     export CUDA_VISIBLE_DEVICES=""
 fi
@@ -74,7 +78,10 @@ fi
 # ---- command ----
 jl=(julia --project="$project" "$script" "$@")
 if [[ "$ngpu" -gt 1 ]]; then
-    cmd=(mpiexec -n "$ngpu" --bind-to none "${jl[@]}")
+    # One GPU per rank, chosen from the list by Open MPI's node-local rank.
+    export RUN_LOCAL_GPUS="$gpus"
+    percpu='export CUDA_VISIBLE_DEVICES=$(cut -d, -f$((OMPI_COMM_WORLD_LOCAL_RANK + 1)) <<<"$RUN_LOCAL_GPUS"); exec "$@"'
+    cmd=(mpiexec -n "$ngpu" --bind-to none bash -c "$percpu" _ "${jl[@]}")
 else
     cmd=("${jl[@]}")
 fi
@@ -92,7 +99,7 @@ echo "log:      $log"
 
 {
     echo "# $(date '+%F %T') on ${OCEAN_MACHINE:-$(hostname -s)}, user $USER"
-    echo "# CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
+    echo "# GPUs ${CUDA_VISIBLE_DEVICES:-none} (one per rank if several), JULIA_CUDA_MEMORY_POOL=${JULIA_CUDA_MEMORY_POOL:-default}"
     echo "# ${cmd[*]}"
 } > "$log"
 
@@ -102,6 +109,11 @@ setsid nohup bash -c 'trap "echo \"# \$(date \"+%F %T\") stopped by kill\"; trap
                       echo "# $(date "+%F %T") finished, exit status $status"' _ "${cmd[@]}" >> "$log" 2>&1 < /dev/null &
 pid=$!
 echo "started:  pid $pid"
+if [[ $wait_end -eq 1 ]]; then
+    wait "$pid" || true
+    tail -n 1 "$log"
+    grep -q "exit status 0$" "$log"; exit $?
+fi
 echo
 echo "  follow:  tail -f $log"
 echo "  stop:    kill $pid"
