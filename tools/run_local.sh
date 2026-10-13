@@ -14,7 +14,8 @@
 #   -j NAME     run name for the log file (default: script name)
 #   --all-visible  with N > 1, every rank sees all N chosen GPUs and picks its own by local
 #               rank (Oceananigans' Distributed(GPU()) does this), instead of seeing only its own.
-#               Lets MPI copy GPU-to-GPU over NVLink (CUDA IPC); see benchmarks/alltoall_bandwidth.jl.
+#               Not needed for speed on pelee/rondeau: MPI uses NVLink either way
+#               (benchmarks/alltoall_bandwidth.jl). Kept for testing other machines.
 #   --wait      stay attached until the run ends (still logged); exit status = the run's
 #   --dry-run   show what would run, start nothing
 #

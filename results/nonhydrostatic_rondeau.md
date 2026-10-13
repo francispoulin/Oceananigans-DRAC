@@ -65,8 +65,19 @@ GPUs** before using these numbers.
   (Fourier-tridiagonal). So more GPUs do allow larger problems, but not in proportion
   (2 GPUs ≈ 1.6–1.8× the cells of one).
 
+## Where the time goes (first look)
+
+`benchmarks/alltoall_bandwidth.jl` on pelee (same hardware, Oct 13): the MPI Alltoall of one
+transpose at 512 x 512 x 256 on 2 GPUs takes 3.45 ms (~78 GB/s per GPU over NVLink), whether each
+rank sees one GPU or all. For FFT on 2 GPUs the step is 65 ms slower than ideal (0.192 s vs 0.127 s),
+and the 6 transposes per step account for only ~21 ms of that. **The GPU-to-GPU communication is not
+the main cost; ~44 ms per step is elsewhere** (distributed FFT as separate 1-D transforms, packing
+and synchronization, or the rest of the model). Next: time the Poisson solve alone on 1 vs 2 GPUs,
+then profile one step (Nsight Systems) if needed.
+
 ## To do
 
+- [ ] Poisson solve alone, 1 vs 2 GPUs (solver vs rest of the model).
 - [ ] FFT on 4 GPUs (strong scaling).
 - [ ] Weak scaling on 2 and 4 idle GPUs (memory per GPU at fixed local size answers how big a problem fits).
 - [ ] Nibi (H100): 1, 2, 4, 8 GPUs, then 2 nodes (expected worse across nodes), if useful for the RAC proposal.

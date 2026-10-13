@@ -4,12 +4,13 @@
 # Why: in the distributed FFT / Fourier-tridiagonal solvers, each transpose packs the complex
 # pressure storage into a 1-D GPU buffer, synchronizes, calls MPI.Alltoall! directly on the GPU
 # buffers (CUDA-aware MPI), then unpacks. With the grid split in x, each pressure solve does 2
-# transposes (y->x and back) and an RK3 step does 3 solves. On rondeau (A100s, 4 NVLinks between
-# every pair, ~100 GB/s each way) the nonhydrostatic results imply only ~25 GB/s per GPU, i.e.
-# PCIe-like: the data may be going through host memory instead of NVLink.
+# transposes (y->x and back) and an RK3 step does 3 solves.
 #
-# The suspected cause is that run_local.sh shows each rank only its own GPU (CUDA_VISIBLE_DEVICES),
-# which can prevent CUDA IPC (GPU-to-GPU copies between processes). Compare:
+# Result on pelee (2 x A100-SXM4, NVLink, 512x512x256): 3.45 ms per transpose, ~78 GB/s per GPU,
+# the same whether each rank sees only its own GPU (run_local.sh default) or all of them
+# (--all-visible). So MPI does copy GPU-to-GPU over NVLink, and the Alltoall explains only ~21 of
+# the ~65 ms per step that 2 GPUs lose in nonhydrostatic_box.jl (results/nonhydrostatic_rondeau.md).
+# To repeat (e.g. on a new machine or MPI):
 #
 #   bash tools/run_local.sh --wait -n 2 -j a2a_2gpu_own benchmarks/alltoall_bandwidth.jl
 #   bash tools/run_local.sh --wait -n 2 --all-visible -j a2a_2gpu_all benchmarks/alltoall_bandwidth.jl
@@ -80,7 +81,8 @@ bytes_out = 16 * count * (P - 1)       # bytes each rank sends to other GPUs per
 t_med, t_min = median(times), minimum(times)
 
 if rank == 0
-    println("MPI library: ", first(split(strip(MPI.Get_library_version()), '\n')))
+    # (the version string can end in NUL characters, which make grep treat the log as binary)
+    println("MPI library: ", first(split(strip(replace(MPI.Get_library_version(), '\0' => "")), '\n')))
     println("MPI.has_cuda(): ", MPI.has_cuda(), "   GPU: ", CUDA.name(CUDA.device()),
             "   GPUs visible per rank: ", nvisible, "   peer access: ", peer)
     @printf("RESULT alltoall ranks=%d visible=%d grid=%dx%dx%d MB_out_per_rank=%.0f t_median_ms=%.2f t_min_ms=%.2f GBps_per_rank=%.1f correct=%s\n",

@@ -42,21 +42,16 @@ Times only the GPU-to-GPU `MPI_Alltoall` that each transpose of the distributed 
 does (2 per pressure solve with an x-split, 3 solves per RK3 step), at the same sizes as
 `nonhydrostatic_box.jl`. It prints the time per transpose and the bandwidth per GPU, and checks the data.
 
-On rondeau, every pair of A100s is linked by 4 NVLinks (`nvidia-smi topo -m`: `NV4`, about 100 GB/s
-each way), but the nonhydrostatic results imply only ~25 GB/s, which is PCIe-like. The suspected
-cause is that `run_local.sh` shows each rank only its own GPU, which can stop MPI from copying
-GPU-to-GPU (CUDA IPC). Compare the default with `--all-visible` (every rank sees all its GPUs
-and picks its own by local rank):
-
 ```bash
 cd $OCEANANIGANS_DRAC_ROOT
-for n in 2 4; do
-    bash tools/run_local.sh --wait -n $n -j a2a_${n}gpu_own benchmarks/alltoall_bandwidth.jl || break
-    bash tools/run_local.sh --wait -n $n --all-visible -j a2a_${n}gpu_all benchmarks/alltoall_bandwidth.jl || break
-done
+bash tools/run_local.sh --wait -n 2 -j a2a_2gpu_own benchmarks/alltoall_bandwidth.jl
+bash tools/run_local.sh --wait -n 2 --all-visible -j a2a_2gpu_all benchmarks/alltoall_bandwidth.jl
 grep -h "^RESULT" logs/a2a_*.out
 ```
 
-If `--all-visible` is much faster, re-run `nonhydrostatic_box.jl` with it (Oceananigans'
-`Distributed(GPU())` assigns GPUs by local rank; the benchmark's `shared_gpu` flag would catch
-two ranks on one GPU).
+**Result (pelee, 2 x A100-SXM4, Oct 13 2026):** 3.45 ms per transpose (268 MB sent per GPU,
+~78 GB/s), identical with each rank seeing only its own GPU (`run_local.sh` default) and with
+`--all-visible`. MPI therefore copies GPU-to-GPU over NVLink in both cases. Per RK3 step that is
+~21 ms, about a third of the ~65 ms that 2 GPUs lose in `nonhydrostatic_box.jl`; the rest is
+elsewhere (distributed FFT kernels, packing, or the rest of the model). Use this script to check
+a new machine or MPI version.
