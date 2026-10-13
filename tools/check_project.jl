@@ -65,8 +65,20 @@ if uses_mpi
     end
 end
 
+# Packages in the global environment (@v1.10) are visible to EVERY project, so a script can
+# work only because of them, then fail on another machine or for another user.
+depot = first(split(get(ENV, "JULIA_DEPOT_PATH", joinpath(homedir(), ".julia")), ':'))
+globalproj = readtoml(joinpath(depot, "environments", "v$(VERSION.major).$(VERSION.minor)", "Project.toml"))
+globaldeps = globalproj === nothing ? String[] : sort(collect(keys(get(globalproj, "deps", Dict()))))
+if isempty(globaldeps)
+    ok("global environment @v$(VERSION.major).$(VERSION.minor) is empty")
+else
+    warn("global environment @v$(VERSION.major).$(VERSION.minor) has: $(join(globaldeps, ", ")). " *
+         "Every project can load these, which hides missing dependencies.")
+    info("Remove with: julia --project=@v$(VERSION.major).$(VERSION.minor) -e 'using Pkg; Pkg.rm([$(join(repr.(globaldeps), ", "))])'")
+end
+
 if !is_viz
-    depot = first(split(get(ENV, "JULIA_DEPOT_PATH", joinpath(homedir(), ".julia")), ':'))
     # Both needed: the Manifest may come from git, and packages may be left from another install.
     installed = isfile(joinpath(vizdir, "Manifest.toml")) && isdir(joinpath(depot, "packages", "CairoMakie"))
     if !isdir(vizdir)
