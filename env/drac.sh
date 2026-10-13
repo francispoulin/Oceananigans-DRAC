@@ -46,6 +46,24 @@ export JULIA_DEPOT_PATH="${_drac_depot:-$HOME/julia_depot}"
 
 unset _drac_depot
 
+# Trillium jobs: the depot is read-only on compute nodes, and Julia 1.10 fails when it can't update
+# the timestamp of a precompiled file it loads ("SystemError: futimes: Permission denied"). So jobs
+# use a writable copy of the compiled files on $SCRATCH, listed first; packages and artifacts are
+# still read from the project depot. Julia tries the most recently modified cache first, and the
+# copies are newer. Only new or updated files are copied (a few seconds once the copy exists).
+# Nothing in this copy needs keeping: if $SCRATCH is purged it is simply made again.
+if [[ "$CC_CLUSTER" == trillium && -n "$SLURM_JOB_ID" && "$JULIA_DEPOT_PATH" != *:* ]]; then
+    _drac_rw="$SCRATCH/julia_depot_jobs"
+    mkdir -p "$_drac_rw/compiled"
+    if [[ -d "$JULIA_DEPOT_PATH/compiled" ]]; then
+        # cp without -p: the copies get the current time, so they are newer than the originals;
+        # -u: copy only files that are missing or older than the original (updated packages)
+        ( flock 9; cp -ru "$JULIA_DEPOT_PATH/compiled/." "$_drac_rw/compiled/" ) 9>"$_drac_rw/.lock"
+    fi
+    export JULIA_DEPOT_PATH="$_drac_rw:$JULIA_DEPOT_PATH"
+    unset _drac_rw
+fi
+
 # One CPU thread per rank is enough when the work is on the GPU.
 export JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-1}"
 

@@ -383,7 +383,11 @@ Trillium (run by SciNet) uses the same software stack, so `env/drac.sh` works un
 - **Files:** `$HOME` and `$PROJECT` are **read-only on compute nodes**. Keep the repository and the
   Julia depot in project space (install and precompile on the login node), but submit jobs from
   `$SCRATCH` and write all output there. `drac.sh` sets `OCEAN_JOB_DIR=$SCRATCH/oceananigans-drac`,
-  where `tools/run_tests.sh` writes its logs and summary.
+  where `tools/run_tests.sh` writes its logs and summary. Julia 1.10 also wants to update the
+  timestamp of each precompiled file it loads, which fails on a read-only depot
+  (`SystemError: futimes: Permission denied`); inside Trillium jobs `drac.sh` therefore puts a
+  writable copy of the compiled files first in `JULIA_DEPOT_PATH` (`$SCRATCH/julia_depot_jobs`,
+  refreshed at the start of each job, disposable).
 - **`~/.bashrc`:** keep SciNet's lines at the top (including its `sbatch` function, which starts
   jobs with a clean environment: job scripts must source `env/ocean_setup.sh`, as ours do); add the
   depot, account and aliases below them, as on the other clusters.
