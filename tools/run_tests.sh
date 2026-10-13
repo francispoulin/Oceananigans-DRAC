@@ -1,22 +1,26 @@
 #!/bin/bash
 # Platform sanity tests on this machine, with ONE command. After ocean_setup, from anywhere:
 #
-#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh              # 1, 2 and 4 GPUs
-#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh --gpus "1 2"  # only 1 and 2 GPUs
+#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh                  # 1 and 4 GPUs (~10 min)
+#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh --gpus "1 2"      # if only 2 GPUs are free
+#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh --gpus "1 2 4"    # everything (~16 min)
+#
+# 4 GPUs cover everything 2 GPUs do (with 4 ranks some have neighbours on both sides), so 2 is not
+# run by default. Most of the time is compiling each model once per process, not running it.
 #
 # What runs, in order (each step is one process; tests/platform.jl lists its tests in detail):
 #
 #   check_env        environment and this repository's project (warnings, not failures)
 #   platform, 1 GPU  load, grids, single_mpi, output, hydro_channel, hydro_box, checkpoint,
 #                    nh_fft, nh_ft (saves the 1-GPU reference fields)
-#   platform, 2 GPUs load, single_mpi, cuda_aware, halo, output, hydro_channel, hydro_box,
+#   platform, 4 GPUs load, single_mpi, cuda_aware, halo, output, hydro_channel, hydro_box,
 #                    checkpoint, nh_fft, nh_ft (compared with the 1-GPU reference)
-#   platform, 4 GPUs the same as 2 GPUs
+#                    (and the same on 2 GPUs if asked for)
 #   viz              viz environment: NetCDF, PNG and MP4 with CairoMakie (CPU)
 #
 # These test the platform only (environment, MPI, CUDA, Oceananigans and other libraries, viz);
 # simulation repositories test their own physics. Proof of function, not performance: small grids,
-# 10-30 steps. Expect ~3-5 min per GPU count (mostly loading and compiling, once per process).
+# 10-30 steps. About 4 min for 1 GPU, 6 min for 2 or 4 GPUs (mostly compiling).
 #
 # pelee/rondeau: one step after another via tools/run_local.sh; a step that needs more GPUs than are
 # free is SKIPPED. Alliance: one Slurm job runs everything (the summary appears when it ends).
@@ -28,12 +32,12 @@ set -o pipefail
 ROOT="$OCEANANIGANS_DRAC_ROOT"
 cd "$ROOT" || exit 1
 
-gpus="1 2 4"; in_job=0
+gpus="1 4"; in_job=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --gpus) gpus="$2"; shift 2 ;;
         --in-job) in_job=1; shift ;;
-        -h|--help) sed -n '2,25p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,30p' "$0"; exit 0 ;;
         *) echo "unknown option $1 (try --help)"; exit 1 ;;
     esac
 done

@@ -8,12 +8,15 @@ performance (that is `benchmarks/`).
 
 ```bash
 ocean_setup
-bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh               # 1, 2 and 4 GPUs (~10-15 min)
-bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh --gpus "1 2"   # if only 2 GPUs are free
+bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh                 # 1 and 4 GPUs (~10 min)
+bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh --gpus "1 2"     # if only 2 GPUs are free
+bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh --gpus "1 2 4"   # everything (~16 min)
 ```
 
 All platform tests for one GPU count run in **one Julia process** (`tests/platform.jl`): packages are
-loaded and kernels compiled once, which is most of the time. The 1-GPU run saves reference fields;
+loaded and kernels compiled once, which is most of the time (the models are tiny; each new model type
+costs a one-time compile of 25-50 s, about twice that on several GPUs). 4 GPUs cover everything 2 GPUs
+do, so 2 is not run by default. The 1-GPU run saves reference fields;
 the 2- and 4-GPU runs compare their part with them (so run 1 GPU first; otherwise the comparisons
 are SKIPPED).
 
@@ -29,20 +32,23 @@ was tested and with which versions. One log per step in `logs/`.
 | Test | GPUs | What it shows |
 | --- | --- | --- |
 | `check_env` | – | environment and this repository's project (warnings, not failures) |
-| `load` | 1, 2, 4 | packages load (versions recorded), GPU works, MPI starts |
+| `load` | 1, 4 (2) | packages load (versions recorded), GPU works, MPI starts |
 | `grids` | 1 | uniform, z-stretched, latitude-longitude and immersed grids on the GPU; fields, ∂x |
-| `single_mpi` | 1, 2, 4 | one MPI only, the system OpenMPI (with NetCDF loaded) |
-| `cuda_aware` | 2, 4 | one GPU per rank; GPU arrays pass through MPI |
-| `halo` | 2, 4 | halo exchange: distributed ∂x equals the single-GPU result |
-| `output` | 1, 2, 4 | NetCDF and JLD2 written and read back under MPI |
-| `hydro_channel` | 1, 2, 4 | hydrostatic, periodic x / walls y (jet-like), WENO, split-explicit free surface, RK3: 30 steps; 2, 4 GPUs match 1 GPU |
-| `hydro_box` | 1, 2, 4 | hydrostatic, bounded x, y, z (vortex-like): 30 steps; 2, 4 GPUs match 1 GPU |
-| `checkpoint` | 1, 2, 4 | 20 straight steps = 10 steps, checkpoint, restart, 10 steps (bitwise expected) |
-| `nh_fft` | 1, 2, 4 | nonhydrostatic, FFT pressure solver: 10 steps; 2, 4 GPUs match 1 GPU |
-| `nh_ft` | 1, 2, 4 | nonhydrostatic, stretched z, Fourier-tridiagonal solver: 10 steps; 2, 4 GPUs match 1 GPU |
+| `single_mpi` | 1, 4 (2) | one MPI only, the system OpenMPI (with NetCDF loaded) |
+| `cuda_aware` | 4 (2) | one GPU per rank; GPU arrays pass through MPI |
+| `halo` | 4 (2) | halo exchange: distributed ∂x equals the single-GPU result |
+| `output` | 1, 4 (2) | NetCDF and JLD2 written and read back under MPI |
+| `hydro_channel` | 1, 4 (2) | hydrostatic, periodic x / walls y (jet-like), WENO, split-explicit free surface, RK3: 30 steps; 4 (2) GPUs match 1 GPU |
+| `hydro_box` | 1, 4 (2) | hydrostatic, bounded x, y, z (vortex-like): 30 steps; 4 (2) GPUs match 1 GPU |
+| `checkpoint` | 1, 4 (2) | 20 straight steps = 10 steps, checkpoint, restart, 10 steps (bitwise expected) |
+| `nh_fft` | 1, 4 (2) | nonhydrostatic, FFT pressure solver: 10 steps; 4 (2) GPUs match 1 GPU |
+| `nh_ft` | 1, 4 (2) | nonhydrostatic, stretched z, Fourier-tridiagonal solver: 10 steps; 4 (2) GPUs match 1 GPU |
 | `viz` | CPU | viz environment: NetCDF read, PNG and MP4 with CairoMakie |
 
-"Match": relative difference below 1e-8 (round-off is ~1e-14).
+"Match": relative difference below 1e-8. (2) = only with `--gpus "1 2 ..."`.
+
+First full run, rondeau, Oct 13: all 31 passed; hydrostatic 2 and 4 GPUs bitwise equal to 1 GPU,
+checkpoint/restart bitwise, nonhydrostatic ~5e-14 (summation order in the distributed FFT).
 
 ## Scope
 
