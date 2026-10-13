@@ -8,16 +8,26 @@
 _fluids_depot="${JULIA_DEPOT_PATH%%:*}"      # remember the user's depot before loading modules
 
 # ---- MACHINE-SPECIFIC ------------------------------------------------------------------
-# Modules as on pelee, Oct 2026 (`module avail`). Load cuda/12.3.2 explicitly: the default
-# cuda is 13.3.1, but the CUDA-aware OpenMPI was used with 12.3.2.
-module purge >/dev/null 2>&1
+# In non-interactive shells (setup scripts, run_local.sh) the `module` function may not be
+# defined; define it the way the group's ~/.profile does.
+if ! type module >/dev/null 2>&1; then
+    module() { eval "$(/opt/uwsys/lmod/stable/libexec/lmod bash "$@")"; }
+fi
+
+# No `module purge`: it could remove the hidden .StdEnv module. Loading a module replaces any
+# other loaded version of it. cuda/12.3.2 explicitly: the default cuda is 13.3.1, but the
+# CUDA-aware OpenMPI is used with 12.3.2.
 module load cuda/12.3.2
 module load openmpi/4.1.7-with-cuda          # CUDA-aware OpenMPI built for the group
 module load julia/1.10.8                     # 1.10.10 on the Alliance; same 1.10 series
 
-# Default depot if JULIA_DEPOT_PATH is not set before sourcing (e.g. in ~/.bashrc).
-# $HOME (/u/<user>) is the same on pelee and rondeau.
-_fluids_default_depot="$HOME/julia_depot"
+# Default depot if JULIA_DEPOT_PATH is not set before sourcing: on the shared bow.math drive
+# (same on pelee and rondeau, and keeps the large depot off /u), else $HOME.
+if [[ -d "/mnt/autofs/bow.math/scratch/$USER" ]]; then
+    _fluids_default_depot="/mnt/autofs/bow.math/scratch/$USER/julia_depot"
+else
+    _fluids_default_depot="$HOME/julia_depot"
+fi
 # ----------------------------------------------------------------------------------------
 
 export OCEAN_MACHINE="$(hostname -s)"
