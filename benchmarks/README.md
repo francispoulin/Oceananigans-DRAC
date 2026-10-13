@@ -58,6 +58,39 @@ x-split, `t_solve(2) - t_solve(1)/2` is the solver's overhead, of which `t_trans
 communication part (`alltoall_bandwidth.jl` alone gave ~6.9 ms per solve on pelee); the remainder
 is the extra FFT work (three 1-D transforms plus a permutation instead of one batched 2-D FFT).
 
+### Timeline of a step: `--profile=true` with Nsight Systems
+
+`--parts` says how long each piece takes; a profile shows why: every GPU kernel by name (cuFFT,
+`_pack_buffer_*`, `_unpack_*`, tendencies), the MPI calls and how long they block, and the gaps
+where a GPU waits. With `--profile=true` the benchmark records 2 steps after the warm-up (not the
+compilation). On pelee/rondeau (`module load cuda/12.3.2`, done by `ocean_setup`, should provide
+`nsys`; check `which nsys`), pick free GPUs with `nvidia-smi`, then from the repository root:
+
+```bash
+cd $OCEANANIGANS_DRAC_ROOT
+export JULIA_CUDA_MEMORY_POOL=none
+NSYS="nsys profile --trace=cuda,mpi,nvtx --mpi-impl=openmpi --capture-range=cudaProfilerApi --capture-range-end=stop --force-overwrite=true"
+ARGS="--solver=FFT --profile=true --windows=1 --steps=10"
+
+# 1 GPU (reference)
+CUDA_VISIBLE_DEVICES=0 $NSYS -o logs/nhprof_FFT_1gpu \
+    julia --project=. benchmarks/nonhydrostatic_box.jl $ARGS
+
+# 2 GPUs: one report per rank; each rank sees both GPUs and Oceananigans picks one by local rank
+CUDA_VISIBLE_DEVICES=0,1 mpiexec -n 2 --bind-to none $NSYS -o logs/nhprof_FFT_2gpu_rank%q{OMPI_COMM_WORLD_RANK} \
+    julia --project=. benchmarks/nonhydrostatic_box.jl $ARGS
+
+# Text summaries (paste these; the .nsys-rep files open in the Nsight Systems GUI)
+for f in logs/nhprof_FFT_1gpu logs/nhprof_FFT_2gpu_rank0; do
+    nsys stats --report cuda_gpu_kern_sum,cuda_api_sum,mpi_event_sum $f.nsys-rep > ${f}_stats.txt
+done
+```
+
+These run in the foreground (not through `run_local.sh`), so use `screen`/`tmux` if the connection
+may drop. If `nsys stats` rejects a report name, `nsys stats --help-reports` lists those available
+in that version. Most useful: the kernel summary (total GPU time per kernel, 1 vs 2 GPUs) and the
+CUDA API summary (time the host spends waiting in `cuStreamSynchronize`/`cuCtxSynchronize`).
+
 ## `alltoall_bandwidth.jl`
 
 Times only the GPU-to-GPU `MPI_Alltoall` that each transpose of the distributed Poisson solvers

@@ -34,6 +34,9 @@
 #   --parts=false        true: after the step timing, also time the pieces of a step (pressure solve
 #                        alone, the pair of distributed transposes, one halo fill of u, v, w) and
 #                        print a second line "RESULT nhparts ..." (see benchmarks/README.md)
+#   --profile=false      true: after the warm-up, run 2 more steps between cudaProfilerStart/Stop,
+#                        for Nsight Systems with --capture-range=cudaProfilerApi (only those steps
+#                        are recorded, not the compilation). See benchmarks/README.md.
 #
 # Prints one line starting with "RESULT" (easy to grep) and writes a JSON file (rank 0).
 
@@ -46,7 +49,7 @@ using Printf, Dates, Statistics
 function parse_options(args)
     opts = Dict("size" => "512x512x256", "weak" => "false", "solver" => "FFT", "float" => "Float64",
                 "steps" => "100", "windows" => "5", "warmup" => "10", "dt" => "0",
-                "output" => "", "device" => "GPU", "parts" => "false")
+                "output" => "", "device" => "GPU", "parts" => "false", "profile" => "false")
     for a in args
         m = match(r"^--([a-z_]+)=(.*)$", a)
         m === nothing && error("bad argument '$a' (use --name=value)")
@@ -62,6 +65,7 @@ solver in ("FFT", "FourierTridiagonal", "ConjugateGradient") || error("--solver 
 FT       = opts["float"] == "Float32" ? Float32 : opts["float"] == "Float64" ? Float64 : error("--float must be Float64 or Float32")
 weak     = lowercase(opts["weak"]) in ("true", "1", "yes")
 parts    = lowercase(opts["parts"]) in ("true", "1", "yes")
+profile  = lowercase(opts["profile"]) in ("true", "1", "yes")
 nsteps   = parse(Int, opts["steps"])
 nwindows = parse(Int, opts["windows"])
 nwarmup  = parse(Int, opts["warmup"])
@@ -135,6 +139,22 @@ for _ in 1:nwarmup
     time_step!(model, Δt)
 end
 sync()
+
+# Nsight Systems capture (--profile=true): 2 steps, already compiled, inside
+# CUDA.@profile external=true (cudaProfilerStart/Stop). Run under
+# `nsys profile --capture-range=cudaProfilerApi`, which records only this part.
+if profile && use_gpu
+    nprofile = 2
+    sync()
+    CUDA.@profile external=true begin
+        for _ in 1:nprofile
+            time_step!(model, Δt)
+        end
+        CUDA.synchronize()
+    end
+    sync()
+    say("profiled $nprofile steps (Nsight Systems capture range)")
+end
 
 times = Float64[]
 for w in 1:nwindows
