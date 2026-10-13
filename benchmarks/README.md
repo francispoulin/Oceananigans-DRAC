@@ -35,3 +35,28 @@ GPU memory) and writes a JSON file to `results/raw/`. The default size, 512 x 51
 Good comparisons: FFT vs FourierTridiagonal at the same size (the stretched-z solver is what a
 Beaufort Gyre or Gulf Stream nonhydrostatic run would use), and the same box with the hydrostatic
 model (`earth_ocean` case of the Oceananigans suite) for the cost of going nonhydrostatic.
+
+## `alltoall_bandwidth.jl`
+
+Times only the GPU-to-GPU `MPI_Alltoall` that each transpose of the distributed Poisson solvers
+does (2 per pressure solve with an x-split, 3 solves per RK3 step), at the same sizes as
+`nonhydrostatic_box.jl`. It prints the time per transpose and the bandwidth per GPU, and checks the data.
+
+On rondeau, every pair of A100s is linked by 4 NVLinks (`nvidia-smi topo -m`: `NV4`, about 100 GB/s
+each way), but the nonhydrostatic results imply only ~25 GB/s, which is PCIe-like. The suspected
+cause is that `run_local.sh` shows each rank only its own GPU, which can stop MPI from copying
+GPU-to-GPU (CUDA IPC). Compare the default with `--all-visible` (every rank sees all its GPUs
+and picks its own by local rank):
+
+```bash
+cd $OCEANANIGANS_DRAC_ROOT
+for n in 2 4; do
+    bash tools/run_local.sh --wait -n $n -j a2a_${n}gpu_own benchmarks/alltoall_bandwidth.jl || break
+    bash tools/run_local.sh --wait -n $n --all-visible -j a2a_${n}gpu_all benchmarks/alltoall_bandwidth.jl || break
+done
+grep -h "^RESULT" logs/a2a_*.out
+```
+
+If `--all-visible` is much faster, re-run `nonhydrostatic_box.jl` with it (Oceananigans'
+`Distributed(GPU())` assigns GPUs by local rank; the benchmark's `shared_gpu` flag would catch
+two ranks on one GPU).

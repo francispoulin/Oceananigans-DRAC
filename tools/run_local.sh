@@ -12,6 +12,9 @@
 #   -g 0,2      use exactly these GPUs instead of picking free ones
 #   -p DIR      Julia project (default: current folder); --viz = the viz environment
 #   -j NAME     run name for the log file (default: script name)
+#   --all-visible  with N > 1, every rank sees all N chosen GPUs and picks its own by local
+#               rank (Oceananigans' Distributed(GPU()) does this), instead of seeing only its own.
+#               Lets MPI copy GPU-to-GPU over NVLink (CUDA IPC); see benchmarks/alltoall_bandwidth.jl.
 #   --wait      stay attached until the run ends (still logged); exit status = the run's
 #   --dry-run   show what would run, start nothing
 #
@@ -29,7 +32,7 @@
 set -eo pipefail
 : "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
 
-ngpu=1; gpus=""; project="$PWD"; name=""; dry=0; wait_end=0
+ngpu=1; gpus=""; project="$PWD"; name=""; dry=0; wait_end=0; all_visible=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -n) ngpu="$2"; shift 2 ;;
@@ -38,8 +41,9 @@ while [[ $# -gt 0 ]]; do
         --viz) project="$OCEANANIGANS_DRAC_ROOT/viz"; shift ;;
         -j) name="$2"; shift 2 ;;
         --wait) wait_end=1; shift ;;
+        --all-visible) all_visible=1; shift ;;
         --dry-run) dry=1; shift ;;
-        -h|--help) sed -n '2,29p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
         -*) echo "unknown option $1 (try --help)"; exit 1 ;;
         *) break ;;
     esac
@@ -77,7 +81,10 @@ fi
 
 # ---- command ----
 jl=(julia --project="$project" "$script" "$@")
-if [[ "$ngpu" -gt 1 ]]; then
+if [[ "$ngpu" -gt 1 && $all_visible -eq 1 ]]; then
+    # Every rank sees all chosen GPUs (CUDA_VISIBLE_DEVICES=$gpus); the program picks one per rank.
+    cmd=(mpiexec -n "$ngpu" --bind-to none "${jl[@]}")
+elif [[ "$ngpu" -gt 1 ]]; then
     # One GPU per rank, chosen from the list by Open MPI's node-local rank.
     export RUN_LOCAL_GPUS="$gpus"
     percpu='export CUDA_VISIBLE_DEVICES=$(cut -d, -f$((OMPI_COMM_WORLD_LOCAL_RANK + 1)) <<<"$RUN_LOCAL_GPUS"); exec "$@"'
@@ -99,7 +106,7 @@ echo "log:      $log"
 
 {
     echo "# $(date '+%F %T') on ${OCEAN_MACHINE:-$(hostname -s)}, user $USER"
-    echo "# GPUs ${CUDA_VISIBLE_DEVICES:-none} (one per rank if several), JULIA_CUDA_MEMORY_POOL=${JULIA_CUDA_MEMORY_POOL:-default}"
+    echo "# GPUs ${CUDA_VISIBLE_DEVICES:-none} ($([[ $all_visible -eq 1 ]] && echo "all visible to every rank" || echo "one per rank if several")), JULIA_CUDA_MEMORY_POOL=${JULIA_CUDA_MEMORY_POOL:-default}"
     echo "# ${cmd[*]}"
 } > "$log"
 
