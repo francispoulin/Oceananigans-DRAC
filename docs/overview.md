@@ -95,9 +95,10 @@ machine".
 
 ## Testing and updates
 
-`tools/run_tests.sh` runs the sanity tests ([tests/README.md](../tests/README.md)): packages and
-versions, grids, hydrostatic and nonhydrostatic models on 1, 2 and 4 GPUs (distributed results
-compared with one GPU), MPI, file output, and `viz`. The summary goes to `results/tests/`.
+`tools/run_tests.sh` runs the platform tests ([tests/README.md](../tests/README.md)): packages and
+versions, grids, hydrostatic (channel and fully bounded box) and nonhydrostatic models on 1, 2 and
+4 GPUs (distributed results compared with one GPU), checkpoint/restart, MPI, file output, and `viz`.
+They test the platform only; simulation repositories test their own physics. The summary goes to `results/tests/`.
 
 Before adopting any library update (Oceananigans, CUDA, MPI, modules): try it in a separate
 environment, run the tests and benchmarks, compare with the stored summaries, then update the

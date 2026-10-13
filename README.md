@@ -55,7 +55,7 @@ Oceananigans Discussions (https://github.com/CliMA/Oceananigans.jl/discussions/6
 | `jobs/` | Slurm scripts: hello on CPU and GPU, multi-GPU checks, benchmarks, plotting (`viz.sh`) |
 | `checks/` | Single MPI, CUDA-aware MPI, distributed vs single-GPU, NetCDF/JLD2 output |
 | `benchmarks/` | Nonhydrostatic box benchmark, 1 to many GPUs (`benchmarks/README.md`) |
-| `tests/` | Sanity tests of the whole setup; run all with `tools/run_tests.sh` (`tests/README.md`) |
+| `tests/` | Platform tests (1, 2, 4 GPUs); run all with `tools/run_tests.sh` (`tests/README.md`) |
 | `results/` | Scaling results |
 | `docs/` | Cluster guides |
 
@@ -76,7 +76,7 @@ Then, in any project folder:
 ```bash
 ocean_setup                     # modules, depot, MPI, for this machine
 check_env                       # anything wrong with the environment or this project?
-bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh                       # full sanity tests (after setup or updates)
+bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh                       # platform tests (after setup or updates)
 julia --project=$OCEANANIGANS_DRAC_ROOT/viz scripts/make_movies.jl      # plots, with viz/
 ```
 
