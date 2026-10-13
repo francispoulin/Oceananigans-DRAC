@@ -53,6 +53,7 @@ Oceananigans Discussions (https://github.com/CliMA/Oceananigans.jl/discussions/6
 | `examples/` | A first Oceananigans script, on CPU or GPU |
 | `jobs/` | Slurm scripts: hello on CPU and GPU, multi-GPU checks, benchmarks, plotting (`viz.sh`) |
 | `checks/` | Single MPI, CUDA-aware MPI, distributed vs single-GPU, NetCDF/JLD2 output |
+| `benchmarks/` | Nonhydrostatic box benchmark, 1 to many GPUs (`benchmarks/README.md`) |
 | `results/` | Scaling results |
 | `docs/` | Cluster guides |
 
