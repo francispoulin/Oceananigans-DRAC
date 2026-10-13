@@ -11,6 +11,7 @@ same scripts work on all of them; only the Slurm node options differ:
 | [Nibi](https://docs.alliancecan.ca/wiki/Nibi) | 8 | `--ntasks-per-node=8 --mem=0` |
 | [Fir](https://docs.alliancecan.ca/wiki/Fir) | 4 | `--ntasks-per-node=4 --mem=0` |
 | [Rorqual](https://docs.alliancecan.ca/wiki/Rorqual) | 4 | `--ntasks-per-node=4 --mem=0` |
+| [Trillium](https://docs.alliancecan.ca/wiki/Trillium_Quickstart) (GPU) | 4 | `--gpus-per-node=4 --ntasks-per-node=4` (see section 11) |
 
 This post covers running Oceananigans on these clusters, from a first CPU job to multi-node
 GPU runs: installing packages, setting up CUDA-aware MPI, Slurm scripts, checking that the
@@ -367,11 +368,29 @@ Rorqual: setup, both hello jobs, and all checks on a full node (4 GPUs) and on 8
 repeated from a fresh clone with the depot in project space.
 
    
-## 11. Other clusters
+## 11. Trillium
 
-Trillium is run by SciNet, is set up differently from the other DRAC clusters, and has not
-been tested. Contributions are welcome: a row in the table above, and an `env/<cluster>.sh`
-if the modules differ.
+Trillium (run by SciNet) uses the same software stack, so `env/drac.sh` works unchanged
+(same modules, CUDA-aware OpenMPI 4.1.5). What differs:
+
+- **Logging in:** SSH keys only (no passwords): add your public key in CCDB (*Manage SSH Keys*).
+  GPU jobs are submitted from the **GPU login node**, `trig-login01`, reached through the CPU
+  login node (`ssh -J <user>@trillium.alliancecan.ca <user>@trig-login01`, or a `ProxyJump`
+  entry in `~/.ssh/config`). Cloning from GitHub over SSH needs a key on Trillium added to GitHub.
+- **GPUs:** 4 × H100 per node; a job gets exactly **1 GPU or whole nodes** (`--gpus-per-node=1`
+  or `--gpus-per-node=4`, with `--ntasks-per-node` to match). `--mem` is ignored (1 GPU = 1/4 node,
+  188 GiB). Don't name a partition: the scheduler picks `debug` or `compute`.
+- **Files:** `$HOME` and `$PROJECT` are **read-only on compute nodes**. Keep the repository and the
+  Julia depot in project space (install and precompile on the login node), but submit jobs from
+  `$SCRATCH` and write all output there. `drac.sh` sets `OCEAN_JOB_DIR=$SCRATCH/oceananigans-drac`,
+  where `tools/run_tests.sh` writes its logs and summary.
+- **`~/.bashrc`:** keep SciNet's lines at the top (including its `sbatch` function, which starts
+  jobs with a clean environment: job scripts must source `env/ocean_setup.sh`, as ours do); add the
+  depot, account and aliases below them, as on the other clusters.
+- No jobs can be submitted from inside jobs.
+
+Other clusters: contributions are welcome (a row in the table above, and an `env/<cluster>.sh` if
+the modules differ).
 
 ## 12. Common problems
 

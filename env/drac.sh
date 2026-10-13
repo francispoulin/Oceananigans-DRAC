@@ -1,5 +1,5 @@
 #!/bin/bash
-# Environment for Oceananigans on Alliance clusters (Nibi, Fir, Rorqual). Source it, don't run it:
+# Environment for Oceananigans on Alliance clusters (Nibi, Fir, Rorqual, Trillium GPU). Source it, don't run it:
 #
 #     source env/drac.sh
 #
@@ -20,6 +20,14 @@ module load cuda/12.6
 module load julia/1.10.10
 
 export OCEAN_MACHINE="${CC_CLUSTER:-alliance}"
+
+# Trillium (SciNet): $HOME and $PROJECT are read-only on compute nodes, so jobs must write (and
+# be submitted from) $SCRATCH. Scripts that write from jobs put their logs and results under
+# OCEAN_JOB_DIR when it is set (default: this repository). Not for the Julia depot: $SCRATCH is
+# purged, and the depot only needs to be written from the login node.
+if [[ "$CC_CLUSTER" == trillium ]]; then
+    export OCEAN_JOB_DIR="${OCEAN_JOB_DIR:-$SCRATCH/oceananigans-drac}"
+fi
 
 # The system OpenMPI (the setup scripts use this, not the Alliance-specific $EBROOTOPENMPI).
 export OCEAN_MPI_ROOT="$EBROOTOPENMPI"

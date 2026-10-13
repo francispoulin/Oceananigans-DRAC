@@ -4,7 +4,7 @@
 
 | File | Machines | Scheduler |
 | --- | --- | --- |
-| `drac.sh` | Alliance clusters: Nibi, Fir, Rorqual | Slurm |
+| `drac.sh` | Alliance clusters: Nibi, Fir, Rorqual, Trillium (GPU) | Slurm |
 | `fluidsgpu.sh` | pelee, rondeau (Waterloo fluids group servers; shared drive) | none |
 
 `fluidsgpu.sh` is specific to our group's servers, which not everyone can use. It is kept here as
@@ -25,3 +25,7 @@ Scripts in `setup/`, `jobs/` and `tools/` rely only on these, so a new machine n
 | `JULIA_NUM_PRECOMPILE_TASKS` | default 2, so precompiling doesn't hit login-node thread limits |
 
 plus the modules that put `julia` and the system `mpiexec` on `PATH`.
+
+Optional: `OCEAN_JOB_DIR`, where scripts write logs and results from inside jobs when the
+repository is not writable from compute nodes (set on Trillium to `$SCRATCH/oceananigans-drac`;
+default: the repository).

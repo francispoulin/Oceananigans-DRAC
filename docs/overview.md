@@ -10,7 +10,7 @@ relies on this one by convention: it is not a Julia package and is never listed 
 
 | Machines | Scheduler | Environment file | Guide |
 | --- | --- | --- | --- |
-| Alliance: Nibi, Fir, Rorqual (H100) | Slurm | `env/drac.sh` | [drac.md](drac.md) |
+| Alliance: Nibi, Fir, Rorqual, Trillium (H100) | Slurm | `env/drac.sh` | [drac.md](drac.md) |
 | Waterloo fluids group: pelee, rondeau (A100, shared drive) | none | `env/fluidsgpu.sh` | [fluidsgpu.md](fluidsgpu.md) |
 
 ## The pieces

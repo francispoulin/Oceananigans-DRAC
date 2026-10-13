@@ -23,14 +23,19 @@
 # 10-30 steps. About 4 min for 1 GPU, 6 min for 2 or 4 GPUs (mostly compiling).
 #
 # pelee/rondeau: one step after another via tools/run_local.sh; a step that needs more GPUs than are
-# free is SKIPPED. Alliance: one Slurm job runs everything (the summary appears when it ends).
+# free is SKIPPED. Alliance: packages are precompiled here (login node), then one Slurm job runs
+# everything (the summary appears when it ends). Trillium: whole-GPU scheduling (1 or 4 GPUs), and
+# jobs can't write to $HOME/$PROJECT, so logs and the summary go to $OCEAN_JOB_DIR (on $SCRATCH);
+# copy the summary into results/tests/ to commit it (the job prints the command).
 # Output: results/tests/<machine>_<date-time>.md (commit it: the record of what was tested, with
 # which versions), and one log per step in logs/.
 
 set -o pipefail
 : "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
 ROOT="$OCEANANIGANS_DRAC_ROOT"
-cd "$ROOT" || exit 1
+OUT="${OCEAN_JOB_DIR:-$ROOT}"          # where logs and results are written (Trillium: $SCRATCH)
+mkdir -p "$OUT/logs" "$OUT/results/tests"
+cd "$OUT" || exit 1
 
 gpus="1 4"; in_job=0
 while [[ $# -gt 0 ]]; do
@@ -47,16 +52,28 @@ maxgpu=$(tr ' ' '\n' <<<"$gpus" | sort -n | tail -1)
 slurm=0
 [[ -n "$CC_CLUSTER" ]] && command -v sbatch >/dev/null && slurm=1
 if [[ $slurm -eq 1 && $in_job -eq 0 && -z "$SLURM_JOB_ID" ]]; then
-    mkdir -p logs
-    sbatch --job-name=tests --nodes=1 --ntasks-per-node="$maxgpu" --gpus-per-task=h100:1 \
-           --cpus-per-task=4 --mem=128G --time=1:00:00 --output="logs/tests_%j.out" \
-           --export=ALL "$0" --in-job --gpus "$gpus"
-    echo "Submitted. When it ends: cat logs/tests_<jobid>.out; summary in results/tests/."
+    # Precompile on the login node: compute nodes may not be able to write to the depot (Trillium).
+    echo "Precompiling (login node; quick if nothing changed)..."
+    { julia --project="$ROOT" -e 'using Pkg; Pkg.precompile()' &&
+      julia --project="$ROOT/viz" -e 'using Pkg; Pkg.precompile()'; } \
+        > "logs/tests_precompile_$(date +%Y%m%d-%H%M).out" 2>&1 || echo "WARNING: precompile failed (see logs/)"
+    if [[ "$CC_CLUSTER" == trillium ]]; then
+        # Only 1 GPU or whole nodes (4 GPUs); memory requests are ignored; no partition given.
+        ng=$(( maxgpu <= 1 ? 1 : 4 ))
+        (( maxgpu > 4 )) && { echo "Trillium: at most 4 GPUs (one node) for the tests"; exit 1; }
+        res=(--gpus-per-node="$ng" --ntasks-per-node="$ng" --time=0:30:00)
+    else
+        res=(--ntasks-per-node="$maxgpu" --gpus-per-task=h100:1 --cpus-per-task=4 --mem=128G --time=1:00:00)
+    fi
+    sbatch --job-name=tests --nodes=1 "${res[@]}" --output="$OUT/logs/tests_%j.out" \
+           --export=ALL "$ROOT/tools/run_tests.sh" --in-job --gpus "$gpus"
+    echo "Submitted. When it ends: cat $OUT/logs/tests_<jobid>.out; summary in $OUT/results/tests/."
     exit 0
 fi
 if [[ $in_job -eq 1 ]]; then
     source "$ROOT/env/ocean_setup.sh" >/dev/null
-    cd "$ROOT" || exit 1
+    OUT="${OCEAN_JOB_DIR:-$ROOT}"
+    cd "$OUT" || exit 1
 fi
 
 # ---- run ----
@@ -64,7 +81,7 @@ mkdir -p logs results/tests
 stamp=$(date +%Y%m%d-%H%M)
 machine="${OCEAN_MACHINE:-$(hostname -s)}"
 summary="results/tests/${machine}_${stamp}.md"
-export TEST_REF_DIR="$ROOT/logs/tests_ref_${stamp}"      # 1-GPU reference fields for this run
+export TEST_REF_DIR="$OUT/logs/tests_ref_${stamp}"      # 1-GPU reference fields for this run
 rows=(); npass=0; nfail=0; nskip=0
 
 record() {   # test gpus result seconds detail log
@@ -83,7 +100,7 @@ run_step() {
         status=$?
     else
         local out runlog
-        out=$(bash tools/run_local.sh --wait -n "$n" -p "$proj" -j "tests_${name}" "$script" 2>&1)
+        out=$(bash "$ROOT/tools/run_local.sh" --wait -n "$n" -p "$proj" -j "tests_${name}" "$script" 2>&1)
         status=$?
         runlog=$(sed -n 's/^log: *//p' <<<"$out")
         if [[ -n "$runlog" && -f "$runlog" ]]; then mv "$runlog" "$log"; else echo "$out" > "$log"; fi
@@ -95,18 +112,20 @@ echo "Platform tests on $machine, $(date '+%F %T'), GPUs: $gpus"
 
 # check_env (warnings are reported, not failures)
 log="logs/tests_check_env_${stamp}.out"
-bash tools/check_env.sh "$ROOT" 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > "$log"
+bash "$ROOT/tools/check_env.sh" "$ROOT" 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > "$log"
 nw=$(grep -c "WARN" "$log")
 if [[ $nw -eq 0 ]]; then record check_env - PASS 0 "all checks OK" "$log"
 else record check_env - WARN 0 "$nw warning(s): $(grep WARN "$log" | head -1 | sed 's/.*WARN *//' | cut -c1-80)" "$log"; fi
 
-# precompile both environments once (not timed)
-{ julia --project=. -e 'using Pkg; Pkg.precompile()'; julia --project=viz -e 'using Pkg; Pkg.precompile()'; } \
-    > "logs/tests_precompile_${stamp}.out" 2>&1
+# precompile both environments once (not timed); on Slurm this was done on the login node
+if [[ $slurm -eq 0 ]]; then
+    { julia --project="$ROOT" -e 'using Pkg; Pkg.precompile()'; julia --project="$ROOT/viz" -e 'using Pkg; Pkg.precompile()'; } \
+        > "logs/tests_precompile_${stamp}.out" 2>&1
+fi
 
 for n in $gpus; do
     start=$(date +%s)
-    run_step "platform_${n}gpu" "$n" . tests/platform.jl
+    run_step "platform_${n}gpu" "$n" "$ROOT" "$ROOT/tests/platform.jl"
     if [[ $status -eq 99 ]]; then
         record "(platform)" "$n" SKIP 0 "GPUs busy: $(grep -o 'Only [0-9]* free GPU(s)' "$log" | head -1)" "$log"
         continue
@@ -124,7 +143,7 @@ for n in $gpus; do
 done
 
 start=$(date +%s)
-run_step viz 0 viz tests/viz.jl
+run_step viz 0 "$ROOT/viz" "$ROOT/tests/viz.jl"
 secs=$(( $(date +%s) - start ))
 detail=$(grep -E "PASS|FAIL|ERROR" "$log" | tail -1 | cut -c1-100 | tr '|' '/')
 if [[ $status -eq 0 ]]; then record viz CPU PASS "$secs" "$detail" "$log"; else record viz CPU FAIL "$secs" "$detail" "$log"; fi
@@ -145,5 +164,8 @@ if [[ $status -eq 0 ]]; then record viz CPU PASS "$secs" "$detail" "$log"; else 
 } > "$summary"
 
 echo
-echo "$npass passed, $nfail failed, $nskip skipped/warnings. Summary: $summary"
+echo "$npass passed, $nfail failed, $nskip skipped/warnings. Summary: $OUT/$summary"
+if [[ "$OUT" != "$ROOT" ]]; then
+    echo "To commit it, from a login node: cp $OUT/$summary $ROOT/results/tests/"
+fi
 [[ $nfail -eq 0 ]]
