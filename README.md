@@ -33,7 +33,8 @@ sbatch jobs/hello_gpu.sh
 sbatch --nodes=1 --ntasks-per-node=2 jobs/checks.sh
 ```
 
-The full walkthrough is [docs/drac.md](docs/drac.md), which is also posted in the
+**Start with [docs/overview.md](docs/overview.md)** (how the pieces fit together).
+The full Alliance walkthrough is [docs/drac.md](docs/drac.md), which is also posted in the
 Oceananigans Discussions (https://github.com/CliMA/Oceananigans.jl/discussions/6150).
 
 ## What's here
