@@ -29,6 +29,8 @@ fi
 
 case "$JULIA_DEPOT_PATH" in
     "")      warn "JULIA_DEPOT_PATH is empty: Julia will use ~/.julia" ;;
+    "$SCRATCH/julia_depot_jobs:"[!:]*)                  # Trillium job (env/drac.sh): intended
+             ok "depot ${JULIA_DEPOT_PATH#*:} (job: compiled files copied to ${JULIA_DEPOT_PATH%%:*})" ;;
     *:*)     warn "JULIA_DEPOT_PATH has several or empty entries: '$JULIA_DEPOT_PATH'"
              info "Something changed it after ocean_setup (a module load?). Source ocean_setup again." ;;
     *)       [[ -d "$JULIA_DEPOT_PATH" ]] && ok "depot $JULIA_DEPOT_PATH" \

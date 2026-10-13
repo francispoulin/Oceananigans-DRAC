@@ -5,7 +5,7 @@
 #   load          packages load, versions, GPU works, MPI starts                       (all)
 #   grids         uniform / stretched-z / lat-lon / immersed grids on the GPU          (1 GPU)
 #   single_mpi    one MPI only, the system OpenMPI, with NetCDF loaded                 (all)
-#   cuda_aware    one GPU per rank, GPU arrays pass through MPI (ring exchange)        (2+ GPUs)
+#   cuda_aware    a different GPU per rank (as Oceananigans picks it), GPU arrays through MPI (2+)
 #   halo          distributed ∂x equals the single-GPU result                          (2+ GPUs)
 #   output        NetCDF and JLD2 written and read back under MPI                      (all)
 #   hydro_channel hydrostatic, periodic x / walls y (jet-like): steps; 2+ GPUs match the 1-GPU run
@@ -123,14 +123,22 @@ end
 
 if nranks > 1
     run_test("cuda_aware") do
+        # Let Oceananigans choose the GPU, as in a real run: with one GPU per task (Nibi, Fir,
+        # Rorqual) each rank sees only its own; when a rank sees all the node's GPUs (Trillium,
+        # run_local --all-visible) Distributed(GPU()) picks one by node-local rank.
+        arch_for(nranks)
+        nvis = length(CUDA.devices())
         uuid = string(CUDA.uuid(CUDA.device()))
         dest, source = mod(rank + 1, nranks), mod(rank - 1, nranks)
         send, recv = CUDA.fill(Float64(rank), 10^6), CUDA.zeros(Float64, 10^6)
         MPI.Sendrecv!(send, recv, comm; dest, source)
-        ok = all(Array(recv) .== source)
+        ok = all_ranks(all(Array(recv) .== source))
         uuids = MPI.gather(uuid, comm; root = 0)                  # strings: gather to rank 0
-        distinct = rank == 0 ? length(unique(uuids)) == nranks : true
-        return pf(ok && distinct), "$nranks ranks; GPUs all different (checked on rank 0)"
+        ndistinct = rank == 0 ? length(unique(uuids)) : nranks
+        distinct = ndistinct == nranks
+        detail = "$nranks ranks on $ndistinct different GPU(s) ($nvis visible per rank); " *
+                 (ok ? "GPU arrays through MPI OK" : "MPI exchange of GPU arrays WRONG")
+        return pf(ok && distinct), detail
     end
 
     run_test("halo") do

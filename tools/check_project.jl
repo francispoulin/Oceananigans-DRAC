@@ -67,7 +67,8 @@ end
 
 # Packages in the global environment (@v1.10) are visible to EVERY project, so a script can
 # work only because of them, then fail on another machine or for another user.
-depot = first(split(get(ENV, "JULIA_DEPOT_PATH", joinpath(homedir(), ".julia")), ':'))
+# The main depot is the last entry: Trillium jobs put a writable copy of the compiled files first.
+depot = last(filter(!isempty, split(get(ENV, "JULIA_DEPOT_PATH", joinpath(homedir(), ".julia")), ':')))
 globalproj = readtoml(joinpath(depot, "environments", "v$(VERSION.major).$(VERSION.minor)", "Project.toml"))
 globaldeps = globalproj === nothing ? String[] : sort(collect(keys(get(globalproj, "deps", Dict()))))
 if isempty(globaldeps)
