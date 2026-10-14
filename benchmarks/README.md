@@ -134,6 +134,23 @@ grep -ah "^RESULT poisson" logs/poisson_FT_*.out
 If the NCCL run fails with one GPU visible per rank, add `--all-visible`. Profile with Nsight Systems
 as for `nonhydrostatic_box.jl` (`--profile=true` records 3 solves), using `--project=envs/nccl`.
 
+### On the Alliance clusters (Fir, Rorqual: 4 GPUs per node)
+
+Once per cluster, on a login node: `bash setup/setup_nccl_env.sh` (makes `envs/nccl`). Then submit
+the whole MPI-vs-NCCL set (1 GPU; 2 and 4 GPUs on one node; 8 GPUs on 2 nodes; 16 on 4; strong
+and weak; 17 jobs) and collect the results when they have run:
+
+```bash
+cd $OCEANANIGANS_DRAC_ROOT
+DRYRUN=1 bash jobs/submit_poisson_scaling.sh      # check the sbatch commands
+bash jobs/submit_poisson_scaling.sh               # or MAXNODES=2 for up to 8 GPUs
+grep -ah "^RESULT poisson" logs/p_*.out
+```
+
+Single jobs: `jobs/benchmark_poisson.sh` (settings as environment variables; see the file).
+On rondeau (4 × A100, NVLink), NCCL was ~5% slower than MPI on 2 GPUs and ~26% faster on 4; across
+nodes the difference may be larger.
+
 ## `alltoall_bandwidth.jl`
 
 Times only the GPU-to-GPU `MPI_Alltoall` that each transpose of the distributed Poisson solvers
