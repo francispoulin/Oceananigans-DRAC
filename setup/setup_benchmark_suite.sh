@@ -9,7 +9,8 @@
 # Steps: clone Oceananigans at commit 8743c40d0 (v0.113.5 + 5 commits, as on Nibi); apply
 # setup/patches/oceananigans_benchmarking_8743c40d0.patch (GPU memory for distributed runs, as on
 # Nibi; OPAL_PREFIX from OCEAN_MPI_ROOT; new --comm MPI|NCCL option); configure_mpi.sh on
-# benchmarking/; add NCCL.jl to it. Not for Nibi, whose checkout already has its own local edits.
+# benchmarking/; add NCCL.jl to it, with the GPU package versions of envs/nccl (so run
+# setup/setup_nccl_env.sh first). Not for Nibi, whose checkout already has its own local edits.
 # Then: jobs/benchmark.sh (COMM=NCCL for NCCL) or jobs/submit_hydro_nccl.sh.
 
 set -eo pipefail
@@ -39,10 +40,20 @@ fi
 echo "== 2. System MPI for benchmarking/ (configure_mpi.sh)"
 bash "$ROOT/setup/configure_mpi.sh" "$BENCH_ROOT/benchmarking"
 
-echo "== 3. Add NCCL.jl to benchmarking/ (other packages kept at their versions)"
-julia --project="$BENCH_ROOT/benchmarking" -e 'using Pkg; Pkg.add(Pkg.PackageSpec(name="NCCL"); preserve=Pkg.PRESERVE_ALL)' || {
-    echo "ERROR adding NCCL. If the message mentions CUDA compat, the suite's Project.toml allows only"
-    echo "CUDA 6.0-6.1: send the error before changing anything."; exit 1; }
+echo "== 3. Add NCCL.jl to benchmarking/, with the GPU packages of envs/nccl (known to work here)"
+# NCCL.jl 0.1.3 needs CUDA.jl >= 6.4 (GPUToolbox 3), but the suite allows only CUDA 6.0-6.1, so
+# widen that; and the newest GPU stack may not precompile with Julia 1.10 (GPUCompiler 2.14 failed
+# on Fir), so take the versions from this repository's NCCL environment instead of the newest.
+REF="$ROOT/envs/nccl/Manifest.toml"
+[[ -f "$REF" ]] || { echo "ERROR: no $REF: run bash setup/setup_nccl_env.sh first"; exit 1; }
+sed -i 's/^CUDA = "5, 6.0 - 6.1"$/CUDA = "5, 6"/' "$BENCH_ROOT/benchmarking/Project.toml"
+REF="$REF" julia --project="$BENCH_ROOT/benchmarking" -e '
+    using Pkg, TOML
+    ref = TOML.parsefile(ENV["REF"])["deps"]
+    names = ["GPUCompiler", "LLVM", "GPUToolbox", "GPUArrays", "KernelAbstractions", "CUDA", "CUDACore", "NCCL"]
+    specs = [PackageSpec(name=n, version=ref[n][1]["version"]) for n in names if haskey(ref, n)]
+    foreach(s -> println("   ", s.name, " => ", s.version), specs)
+    Pkg.add(specs)' || { echo "ERROR adding NCCL: send the error before changing anything."; exit 1; }
 
 echo "== 4. Check: packages load and Oceananigans' NCCL extension is available"
 julia --project="$BENCH_ROOT/benchmarking" -e '
