@@ -1,0 +1,162 @@
+[
+  {
+    "name": "EarthOcean_lat_lon_2880x1440x200_F64_WENOVectorInvariantDefault_WENO7_CATKE_2tr",
+    "group": "",
+    "float_type": "Float64",
+    "grid_size": [
+      720,
+      1440,
+      200
+    ],
+    "time_steps": 100,
+    "samples": 5,
+    "Δt": 30.0,
+    "total_time_seconds": 518.4562076840001,
+    "time_per_step_seconds": 1.0366679781400001,
+    "time_per_step_median_seconds": 1.03682010299,
+    "time_per_step_max_seconds": 1.03735384177,
+    "steps_per_second": 0.9646290047409488,
+    "grid_points_per_second": 2.0002547042308316e8,
+    "gpu_memory_used": 51165543344,
+    "metadata": {
+      "julia_version": "1.10.10",
+      "oceananigans_version": "0.113.5",
+      "architecture": "Distributed{GPU{CUDABackend}, false, Partition{Int64, Int64, Int64}, Tuple{Int64, Int64, Int64}, Int64, Tuple{Int64, Int64, Int64}, Oceananigans.DistributedComputations.NeighboringRanks{Int64, Int64, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing}, MPI.Comm, Vector{MPI.Request}, Base.RefValue{Int64}, Nothing}",
+      "gpu_name": null,
+      "cuda_version": null,
+      "cpu_model": "INTEL(R) XEON(R) PLATINUM 8570 (icelake-client)",
+      "num_threads": 1,
+      "hostname": "g21.nibi.sharcnet",
+      "package_versions": {
+        "Adapt": "4.7.1",
+        "CUDA": "6.1.0",
+        "GPUArrays": "11.5.15",
+        "GPUCompiler": "1.17.1",
+        "KernelAbstractions": "0.9.43",
+        "LLVM": "9.13.2"
+      },
+      "timestamp": "2026-10-14T02:44:07.040"
+    },
+    "rank": 0
+  },
+  {
+    "name": "EarthOcean_lat_lon_2880x1440x200_F64_WENOVectorInvariantDefault_WENO7_CATKE_2tr",
+    "group": "",
+    "float_type": "Float64",
+    "grid_size": [
+      720,
+      1440,
+      200
+    ],
+    "time_steps": 100,
+    "samples": 5,
+    "Δt": 30.0,
+    "total_time_seconds": 518.4572277399999,
+    "time_per_step_seconds": 1.03666938095,
+    "time_per_step_median_seconds": 1.0368212481599999,
+    "time_per_step_max_seconds": 1.03736301525,
+    "steps_per_second": 0.9646276994152211,
+    "grid_points_per_second": 2.0002519975074026e8,
+    "gpu_memory_used": 51165543344,
+    "metadata": {
+      "julia_version": "1.10.10",
+      "oceananigans_version": "0.113.5",
+      "architecture": "Distributed{GPU{CUDABackend}, false, Partition{Int64, Int64, Int64}, Tuple{Int64, Int64, Int64}, Int64, Tuple{Int64, Int64, Int64}, Oceananigans.DistributedComputations.NeighboringRanks{Int64, Int64, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing}, MPI.Comm, Vector{MPI.Request}, Base.RefValue{Int64}, Nothing}",
+      "gpu_name": null,
+      "cuda_version": null,
+      "cpu_model": "INTEL(R) XEON(R) PLATINUM 8570 (icelake-client)",
+      "num_threads": 1,
+      "hostname": "g21.nibi.sharcnet",
+      "package_versions": {
+        "Adapt": "4.7.1",
+        "CUDA": "6.1.0",
+        "GPUArrays": "11.5.15",
+        "GPUCompiler": "1.17.1",
+        "KernelAbstractions": "0.9.43",
+        "LLVM": "9.13.2"
+      },
+      "timestamp": "2026-10-14T02:44:07.040"
+    },
+    "rank": 1
+  },
+  {
+    "name": "EarthOcean_lat_lon_2880x1440x200_F64_WENOVectorInvariantDefault_WENO7_CATKE_2tr",
+    "group": "",
+    "float_type": "Float64",
+    "grid_size": [
+      720,
+      1440,
+      200
+    ],
+    "time_steps": 100,
+    "samples": 5,
+    "Δt": 30.0,
+    "total_time_seconds": 518.4558161680001,
+    "time_per_step_seconds": 1.03666773871,
+    "time_per_step_median_seconds": 1.03681843408,
+    "time_per_step_max_seconds": 1.03734988023,
+    "steps_per_second": 0.9646292275327981,
+    "grid_points_per_second": 2.0002551662120104e8,
+    "gpu_memory_used": 51165543344,
+    "metadata": {
+      "julia_version": "1.10.10",
+      "oceananigans_version": "0.113.5",
+      "architecture": "Distributed{GPU{CUDABackend}, false, Partition{Int64, Int64, Int64}, Tuple{Int64, Int64, Int64}, Int64, Tuple{Int64, Int64, Int64}, Oceananigans.DistributedComputations.NeighboringRanks{Int64, Int64, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing}, MPI.Comm, Vector{MPI.Request}, Base.RefValue{Int64}, Nothing}",
+      "gpu_name": null,
+      "cuda_version": null,
+      "cpu_model": "INTEL(R) XEON(R) PLATINUM 8570 (icelake-client)",
+      "num_threads": 1,
+      "hostname": "g21.nibi.sharcnet",
+      "package_versions": {
+        "Adapt": "4.7.1",
+        "CUDA": "6.1.0",
+        "GPUArrays": "11.5.15",
+        "GPUCompiler": "1.17.1",
+        "KernelAbstractions": "0.9.43",
+        "LLVM": "9.13.2"
+      },
+      "timestamp": "2026-10-14T02:44:07.040"
+    },
+    "rank": 2
+  },
+  {
+    "name": "EarthOcean_lat_lon_2880x1440x200_F64_WENOVectorInvariantDefault_WENO7_CATKE_2tr",
+    "group": "",
+    "float_type": "Float64",
+    "grid_size": [
+      720,
+      1440,
+      200
+    ],
+    "time_steps": 100,
+    "samples": 5,
+    "Δt": 30.0,
+    "total_time_seconds": 518.455736783,
+    "time_per_step_seconds": 1.03667071384,
+    "time_per_step_median_seconds": 1.03681424214,
+    "time_per_step_max_seconds": 1.03735197299,
+    "steps_per_second": 0.9646264591538758,
+    "grid_points_per_second": 2.000249425701477e8,
+    "gpu_memory_used": 51165543344,
+    "metadata": {
+      "julia_version": "1.10.10",
+      "oceananigans_version": "0.113.5",
+      "architecture": "Distributed{GPU{CUDABackend}, false, Partition{Int64, Int64, Int64}, Tuple{Int64, Int64, Int64}, Int64, Tuple{Int64, Int64, Int64}, Oceananigans.DistributedComputations.NeighboringRanks{Int64, Int64, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing}, MPI.Comm, Vector{MPI.Request}, Base.RefValue{Int64}, Nothing}",
+      "gpu_name": null,
+      "cuda_version": null,
+      "cpu_model": "INTEL(R) XEON(R) PLATINUM 8570 (icelake-client)",
+      "num_threads": 1,
+      "hostname": "g21.nibi.sharcnet",
+      "package_versions": {
+        "Adapt": "4.7.1",
+        "CUDA": "6.1.0",
+        "GPUArrays": "11.5.15",
+        "GPUCompiler": "1.17.1",
+        "KernelAbstractions": "0.9.43",
+        "LLVM": "9.13.2"
+      },
+      "timestamp": "2026-10-14T02:44:07.040"
+    },
+    "rank": 3
+  }
+]
