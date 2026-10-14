@@ -36,6 +36,22 @@ Good comparisons: FFT vs FourierTridiagonal at the same size (the stretched-z so
 Beaufort Gyre or Gulf Stream nonhydrostatic run would use), and the same box with the hydrostatic
 model (`earth_ocean` case of the Oceananigans suite) for the cost of going nonhydrostatic.
 
+### MPI or NCCL: `--comm=NCCL`
+
+`--comm=NCCL` builds the model on `NCCLDistributed` (transposes and halo exchanges over NCCL). It
+needs the NCCL test environment (`setup/setup_nccl_env.sh`, and `--this-machine` on each other
+machine). On rondeau, NCCL made the pressure solve ~26% faster on 4 GPUs but ~5% slower on 2
+(`poisson_solver.jl`). Full step, 4 GPUs:
+
+```bash
+cd $OCEANANIGANS_DRAC_ROOT
+for c in MPI NCCL; do
+    bash tools/run_local.sh --wait -n 4 -p envs/nccl -j nh_FT_${c}_4gpu benchmarks/nonhydrostatic_box.jl \
+        --solver=FourierTridiagonal --comm=$c --parts=true --windows=3 || break
+done
+grep -ah "^RESULT nh" logs/nh_FT_*_4gpu_*.out
+```
+
 ### Where the time goes: `--parts=true`
 
 Adds a second line, `RESULT nhparts`, with the pieces of a step timed separately: the pressure

@@ -31,6 +31,8 @@
 #   --output=            JSON file (default results/raw/nh_<solver>_<size>_<n>gpu_<date>.json;
 #                        results/raw/ is not under version control)
 #   --device=GPU         GPU | CPU
+#   --comm=MPI           MPI | NCCL: NCCLDistributed (transposes and halos over NCCL); needs NCCL.jl
+#                        in the environment (setup/setup_nccl_env.sh, then run_local.sh -p envs/nccl)
 #   --parts=false        true: after the step timing, also time the pieces of a step (pressure solve
 #                        alone, the pair of distributed transposes, one halo fill of u, v, w) and
 #                        print a second line "RESULT nhparts ..." (see benchmarks/README.md)
@@ -49,7 +51,8 @@ using Printf, Dates, Statistics
 function parse_options(args)
     opts = Dict("size" => "512x512x256", "weak" => "false", "solver" => "FFT", "float" => "Float64",
                 "steps" => "100", "windows" => "5", "warmup" => "10", "dt" => "0",
-                "output" => "", "device" => "GPU", "parts" => "false", "profile" => "false")
+                "output" => "", "device" => "GPU", "parts" => "false", "profile" => "false",
+                "comm" => "MPI")
     for a in args
         m = match(r"^--([a-z_]+)=(.*)$", a)
         m === nothing && error("bad argument '$a' (use --name=value)")
@@ -74,6 +77,10 @@ Nx0, Ny, Nz = parse.(Int, split(opts["size"], 'x'))
 # ---------------------------------------------------------------- MPI and architecture
 use_gpu = opts["device"] == "GPU"
 use_gpu && @eval using CUDA
+comm_name = uppercase(opts["comm"])
+comm_name in ("MPI", "NCCL") || error("--comm must be MPI or NCCL")
+comm_name == "NCCL" && !use_gpu && error("--comm=NCCL needs --device=GPU")
+comm_name == "NCCL" && @eval using NCCL        # loads Oceananigans' NCCL extension
 
 # Start MPI the safe way on our machines (see src/drac_mpi.jl), also for one rank.
 include(joinpath(ENV["OCEANANIGANS_DRAC_ROOT"], "src", "drac_mpi.jl"))
@@ -89,7 +96,13 @@ Ny % nranks == 0 || error("Ny = $Ny must be divisible by the number of GPUs ($nr
 solver == "ConjugateGradient" && nranks > 1 && error("--solver=ConjugateGradient: single GPU only in this benchmark")
 
 child = use_gpu ? GPU() : CPU()
-arch  = nranks == 1 ? child : Distributed(child; partition = Partition(nranks, 1, 1))
+arch  = if nranks == 1
+    child
+elseif comm_name == "NCCL"
+    Oceananigans.DistributedComputations.NCCLDistributed(child; partition = Partition(nranks, 1, 1))
+else
+    Distributed(child; partition = Partition(nranks, 1, 1))
+end
 
 # ---------------------------------------------------------------- model (as nonhydrostatic_box)
 Oceananigans.defaults.FloatType = FT
@@ -203,8 +216,8 @@ if parts
     say(@sprintf("  pressure solve %.2f ms (x3 per step = %.1f ms), transposes per solve %s, halo fill u,v,w %.2f ms, rest of step %.1f ms",
                  1e3 * t_solve, 3e3 * t_solve, isnan(t_trans) ? "n/a" : @sprintf("%.2f ms", 1e3 * t_trans),
                  1e3 * t_halo, 1e3 * t_rest))
-    say(@sprintf("RESULT nhparts solver=%s size=%dx%dx%d gpus=%d weak=%s t_step_ms=%.2f t_solve_ms=%.3f t_transposes_ms=%.3f t_halo_uvw_ms=%.3f t_rest_ms=%.2f",
-                 solver, Nx, Ny, Nz, nranks, weak, 1e3 * minimum(times), 1e3 * t_solve,
+    say(@sprintf("RESULT nhparts solver=%s size=%dx%dx%d gpus=%d comm=%s weak=%s t_step_ms=%.2f t_solve_ms=%.3f t_transposes_ms=%.3f t_halo_uvw_ms=%.3f t_rest_ms=%.2f",
+                 solver, Nx, Ny, Nz, nranks, comm_name, weak, 1e3 * minimum(times), 1e3 * t_solve,
                  1e3 * t_trans, 1e3 * t_halo, 1e3 * t_rest))
 end
 
@@ -244,8 +257,8 @@ tmin, tmed, tmax = minimum(times), median(times), maximum(times)
 ncells = Nx * Ny * Nz
 gpu    = use_gpu ? CUDA.name(CUDA.device()) : "CPU"
 
-say(@sprintf("RESULT nh solver=%s size=%dx%dx%d gpus=%d weak=%s float=%s t_step_min=%.5f t_step_median=%.5f t_step_max=%.5f cells_per_s=%.3e mem_GiB=%.2f finite=%s shared_gpu=%s gpu=\"%s\"",
-             solver, Nx, Ny, Nz, nranks, weak, FT, tmin, tmed, tmax, ncells / tmin, memory / 2^30, all_ok, shared, gpu))
+say(@sprintf("RESULT nh solver=%s size=%dx%dx%d gpus=%d comm=%s weak=%s float=%s t_step_min=%.5f t_step_median=%.5f t_step_max=%.5f cells_per_s=%.3e mem_GiB=%.2f finite=%s shared_gpu=%s gpu=\"%s\"",
+             solver, Nx, Ny, Nz, nranks, comm_name, weak, FT, tmin, tmed, tmax, ncells / tmin, memory / 2^30, all_ok, shared, gpu))
 
 if rank == 0
     stamp  = Dates.format(now(), "yyyymmdd-HHMMSS")
@@ -260,6 +273,7 @@ if rank == 0
         "grid_size"                    => "[$Nx, $Ny, $Nz]",
         "ranks"                        => string(nranks),
         "partition"                    => q("$(nranks)x1x1"),
+        "communication"                => q(comm_name),
         "weak_scaling"                 => string(weak),
         "dt"                           => string(Δt),
         "time_steps"                   => string(nsteps),
