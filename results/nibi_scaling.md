@@ -39,12 +39,13 @@ every GPU keeps the same 207 million cells (the 1-GPU grid). Grid split in x onl
 | GPUs | Nodes | Grid (resolution) | Cells per GPU | Time per step (s) | Median (s) | Efficiency | GPU memory per rank |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 1 | 1440 × 720 × 200 (1/4°) | 207,360,000 | 1.0110 | – | 100% | – |
-| 4 | 1 | 2880 × 1440 × 200 (1/8°) | 207,360,000 | to run | | | |
+| 4 | 1 | 2880 × 1440 × 200 (1/8°) | 207,360,000 | 1.0367 | 1.0368 | 97.5% | 47.7 GiB (247 B/cell) |
 | 16 | 2 | 5760 × 2880 × 200 (1/16°) | 207,360,000 | to run | | | |
 | 64 | 8 | 11520 × 5760 × 200 (1/32°) | 207,360,000 | 1.1929 | 1.1998 | 84.7% | 54.9 GiB (284 B/cell) |
 
 Efficiency = time on 1 GPU / time on N GPUs (fastest windows). The 64-GPU run (job 23130970,
-Oct 5, Δt = 7.5 s) is in `b32_gpu64_23130970.md`; its windows agree within 1%.
+Oct 5, Δt = 7.5 s) is in `b32_gpu64_23130970.md`; its windows agree within 1%. The 4-GPU run
+(job 23883358, Oct 14, Δt = 30 s): windows within 0.1%.
 
 **Reading the results.** At a production-sized load per GPU, 64 GPUs on 8 nodes keep 85% of the
 single-GPU speed: a 13-billion-cell 1/32° global grid runs at 1.2 s per step. This is the regime the
@@ -57,7 +58,8 @@ H100 is the practical limit for this configuration.
 
 ## To do
 
-- [ ] Weak scaling: 4 GPUs (1/8°) and 16 GPUs (1/16°), as above.
+- [x] Weak scaling: 4 GPUs (1/8°): 97.5%.
+- [ ] Weak scaling: 16 GPUs (1/16°), job 23883360 (Oct 14).
 - [ ] Median times alongside the fastest window (strong-scaling JSONs on Nibi:
       `$SCRATCH/software/Oceananigans.jl/benchmarking/results/`; `tools/summarize_benchmarks.py`)
 - [ ] GPU memory per rank for the strong-scaling runs (recorded since the `src/utils.jl` fix)
