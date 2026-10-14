@@ -30,6 +30,7 @@ if git apply --reverse --check "$PATCH" 2>/dev/null; then
 else
     [[ -z "$(git status --porcelain --untracked-files=no)" ]] || {
         echo "ERROR: $BENCH_ROOT has local changes and the suite patch is not applied:"; git status --short; exit 1; }
+    git cat-file -e "$COMMIT^{commit}" 2>/dev/null || { echo "   fetching (existing clone without $COMMIT)"; git fetch -q origin; }
     git checkout -q "$COMMIT"
     git apply "$PATCH"
     echo "   checked out $(git log --oneline -1) and applied the suite patch"
