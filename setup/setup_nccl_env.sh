@@ -7,10 +7,30 @@
 #
 # Then run with it:  bash tools/run_local.sh -p envs/nccl ...  (envs/ is not committed).
 # Delete the folder to remove it; nothing else changes.
+#
+# On EACH OTHER machine that shares this folder (e.g. rondeau after setting up on pelee), run once,
+# with a single process, before any multi-GPU run:
+#
+#     bash setup/setup_nccl_env.sh --this-machine
+#
+# NCCL's library is chosen per machine from the GPU driver (pelee and rondeau pick different CUDA
+# builds), so it may need downloading; and two MPI ranks compiling NCCL at the same time fail.
 
 set -eo pipefail
 : "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
 ROOT="$OCEANANIGANS_DRAC_ROOT"
+if [[ "$1" == "--this-machine" ]]; then
+    DIR="${2:-$ROOT/envs/nccl}"
+    [[ -f "$DIR/Project.toml" ]] || { echo "no environment in $DIR: run without --this-machine first"; exit 1; }
+    echo "== Download what this machine needs and compile (one process)"
+    julia --project="$DIR" -e 'using Pkg; Pkg.instantiate()'
+    julia --project="$DIR" -e '
+        using Oceananigans, CUDA, NCCL
+        ok = Base.get_extension(Oceananigans, :OceananigansNCCLExt) !== nothing
+        println(ok ? "OK: OceananigansNCCLExt loaded on $(gethostname())" : "FAIL: OceananigansNCCLExt did not load")
+        ok || exit(1)'
+    exit 0
+fi
 DIR="${1:-$ROOT/envs/nccl}"
 mkdir -p "$DIR"
 DIR="$(cd "$DIR" && pwd)"

@@ -106,6 +106,8 @@ NCCL needs NCCL.jl, which is not in the main environment: make a separate test e
 ```bash
 cd $OCEANANIGANS_DRAC_ROOT
 bash setup/setup_nccl_env.sh                  # ~10 min (downloads NCCL, precompiles); ends with "OK: ... loaded"
+# on each other machine sharing the folder (e.g. rondeau), once, before multi-GPU runs:
+#   bash setup/setup_nccl_env.sh --this-machine
 S="--solver=FourierTridiagonal"
 bash tools/run_local.sh --wait -n 1 -p envs/nccl -j poisson_FT_1gpu      benchmarks/poisson_solver.jl $S
 bash tools/run_local.sh --wait -n 2 -p envs/nccl -j poisson_FT_MPI_2gpu  benchmarks/poisson_solver.jl $S --comm=MPI
