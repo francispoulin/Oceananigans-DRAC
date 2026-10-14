@@ -7,3 +7,6 @@ LocalPreferences.toml
 *.jld2
 results/raw/
 logs/
+
+# Separate test environments (setup/setup_nccl_env.sh)
+envs/

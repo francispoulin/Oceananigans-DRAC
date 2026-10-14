@@ -91,6 +91,30 @@ may drop. If `nsys stats` rejects a report name, `nsys stats --help-reports` lis
 in that version. Most useful: the kernel summary (total GPU time per kernel, 1 vs 2 GPUs) and the
 CUDA API summary (time the host spends waiting in `cuStreamSynchronize`/`cuCtxSynchronize`).
 
+## `poisson_solver.jl`: the pressure solver alone, MPI or NCCL
+
+Times `solve_for_pressure!` (source term + distributed Poisson solve, built exactly as
+`NonhydrostaticModel` builds it) without the rest of the model, with MPI or Oceananigans'
+`NCCLDistributed` for the transposes. Prints `RESULT poisson ...` with the time per solve, the time of
+the two transposes, GPU memory, and `p_rms`, which must agree between 1 and N GPUs and between MPI
+and NCCL (correctness check).
+
+NCCL needs NCCL.jl, which is not in the main environment: make a separate test environment once
+(same versions as the main Manifest, plus NCCL; `envs/` is not committed):
+
+```bash
+cd $OCEANANIGANS_DRAC_ROOT
+bash setup/setup_nccl_env.sh                  # ~10 min (downloads NCCL, precompiles); ends with "OK: ... loaded"
+S="--solver=FourierTridiagonal"
+bash tools/run_local.sh --wait -n 1 -p envs/nccl -j poisson_FT_1gpu      benchmarks/poisson_solver.jl $S
+bash tools/run_local.sh --wait -n 2 -p envs/nccl -j poisson_FT_MPI_2gpu  benchmarks/poisson_solver.jl $S --comm=MPI
+bash tools/run_local.sh --wait -n 2 -p envs/nccl -j poisson_FT_NCCL_2gpu benchmarks/poisson_solver.jl $S --comm=NCCL
+grep -ah "^RESULT poisson" logs/poisson_FT_*.out
+```
+
+If the NCCL run fails with one GPU visible per rank, add `--all-visible`. Profile with Nsight Systems
+as for `nonhydrostatic_box.jl` (`--profile=true` records 3 solves), using `--project=envs/nccl`.
+
 ## `alltoall_bandwidth.jl`
 
 Times only the GPU-to-GPU `MPI_Alltoall` that each transpose of the distributed Poisson solvers
