@@ -48,11 +48,10 @@ GPUs** before using these numbers.
 
 ## Reading the results
 
-- **The pressure solve's communication sets the scaling.** Hydrostatic Oceananigans scales at
+- **The distributed pressure solve sets the scaling.** Hydrostatic Oceananigans scales at
   97% from 1 to 2 GPUs (Nibi, `nibi_scaling.md`); nonhydrostatic at 64–66%, even within one node over
-  NVLink. If everything but the pressure solve split perfectly, 2 GPUs would take 0.127 s (FFT); the
-  extra ~0.065 s per step (~20 ms per pressure solve, 3 per step) is the transposes of the distributed
-  FFT, which reshuffle the whole pressure field between GPUs.
+  NVLink. About 80% of the time lost per step is in the pressure solve; the GPU-to-GPU data movement
+  is only part of it (see "Where the time goes" below).
 - **The cost is mostly paid once, when going from 1 GPU to several.** Fourier-tridiagonal: 64% at
   2 GPUs, 53% at 4, but 2 → 4 GPUs alone is 82% efficient. More GPUs within a node still help.
 - **Fourier-tridiagonal is 13% faster than FFT on one GPU** (a tridiagonal solve per column is cheaper
@@ -65,19 +64,80 @@ GPUs** before using these numbers.
   (Fourier-tridiagonal). So more GPUs do allow larger problems, but not in proportion
   (2 GPUs ≈ 1.6–1.8× the cells of one).
 
-## Where the time goes (first look)
+## Where the time goes
 
-`benchmarks/alltoall_bandwidth.jl` on pelee (same hardware, Oct 13): the MPI Alltoall of one
-transpose at 512 x 512 x 256 on 2 GPUs takes 3.45 ms (~78 GB/s per GPU over NVLink), whether each
-rank sees one GPU or all. For FFT on 2 GPUs the step is 65 ms slower than ideal (0.192 s vs 0.127 s),
-and the 6 transposes per step account for only ~21 ms of that. **The GPU-to-GPU communication is not
-the main cost; ~44 ms per step is elsewhere** (distributed FFT as separate 1-D transforms, packing
-and synchronization, or the rest of the model). Next: time the Poisson solve alone on 1 vs 2 GPUs,
-then profile one step (Nsight Systems) if needed.
+All on pelee (same hardware as rondeau: 2 × A100-SXM4-40GB, NVLink), Oct 13, 512 × 512 × 256.
+Posted as an Oceananigans Discussion (Oct 13, 2026) with the roadmap below.
+
+### The MPI Alltoall alone (`benchmarks/alltoall_bandwidth.jl`)
+
+One transpose on 2 GPUs: 3.45 ms (268 MB sent per GPU, ~78 GB/s over NVLink), the same whether each
+rank sees one GPU or all (`run_local.sh --all-visible`). So MPI copies GPU-to-GPU over NVLink, and
+the 6 transposes per step (2 per solve) account for ~21 ms of the ~65 ms lost per step (FFT).
+
+### Pieces of a step (`--parts=true`)
+
+Time in ms; one RK3 step does 3 pressure solves; "rest" = step − 3 solves.
+
+| | FFT, 1 GPU | FFT, 2 GPUs | FT, 1 GPU | FT, 2 GPUs |
+| --- | --- | --- | --- | --- |
+| step | 253.6 | 193.3 (66%) | 220.3 | 171.9 (64%) |
+| one pressure solve | 32.1 | **33.7** | 18.8 | **26.4** |
+| transposes in one solve (pack, Alltoall, unpack) | – | 10.6 | – | 10.6 |
+| rest of the step | 157.3 | 92.2 (85%) | 164.0 | 92.7 (88%) |
+| one halo fill of u, v, w | 0.24 | 0.79 | 0.24 | 0.79 |
+
+(FT = Fourier-tridiagonal.) **On 2 GPUs the distributed solve is no faster than on 1 GPU (FFT), or
+slower (FT, +40%).** About 80% of the time lost per step is in the solve (FFT 53 of 67 ms; FT 51 of
+62 ms); the rest of the model scales at 85–88%. A repeat of the FT runs (single timing window)
+gave the same solve times (18.8 and 26.5 ms).
+
+### Inside the Fourier-tridiagonal solve (Nsight Systems, `--profile=true`)
+
+2 profiled steps = 6 solves; kernel times per solve in ms (2 GPUs: rank 0).
+
+| | 1 GPU | 2 GPUs | ideal (½ of 1 GPU) |
+| --- | --- | --- | --- |
+| cuFFT kernels (x and y) | 6.3 | 3.1 | 3.2 |
+| batched tridiagonal solve | 5.2 | 2.6 | 2.6 |
+| source term | 2.0 | 1.0 | 1.0 |
+| copies, scaling (cuBLAS `scal`), real part, reductions | 5.2 | 2.9 | 2.6 |
+| `permutedims` (4 per solve) | – | **6.1** | – |
+| pack/unpack for the 2 transposes | – | **3.6** | – |
+| MPI GPU-to-GPU copies (NVLink, CUDA IPC) | – | **7.0** | – |
+| device-to-device copy | – | 0.8 | – |
+| **total** | **18.7** | **≈ 27 (measured 26.5)** | **9.4** |
+
+- Everything the solve does on one GPU scales perfectly to two; the excess is work only the
+  distributed path does.
+- The largest piece is `permutedims`: on GPUs the y transform runs on a copy reordered so y is
+  contiguous, and reordered back (forward and backward), because cuFFT handles strided transforms
+  along dimension 2 poorly (comment in `plan_distributed_transforms`). On one GPU, x and y are
+  transformed together in one batched 2-D FFT, so this does not arise.
+- The GPUs are busy throughout (no large idle gaps): the cost is extra memory traffic, not waiting.
+  The host waits in `cuStreamSynchronize`, and Open MPI polls CUDA events during the copies.
+- Rest of the step: the tendency kernels are split into interior and boundary parts (to overlap halo
+  communication), costing ~8% extra, plus many small kernels for halo buffers.
+
+### Roadmap (smallest changes first; savings per FT solve)
+
+| Step | Difficulty | Saving | Expected FT efficiency, 1 → 2 GPUs |
+| --- | --- | --- | --- |
+| A. Store the y-local data y-first throughout the solve, so the 4 permutes disappear | medium | ~6 ms | ~72% |
+| B. Remove the duplicate normalization and the extra device-to-device copy | easy | ~1.5 ms | ~74% (with A) |
+| C. `NCCLDistributed` for the transposes (exists in `OceananigansNCCLExt`) | easy to try | small | |
+| D. Fuse the reordering into neighbouring kernels | medium | 1–2 ms | |
+| E. Overlap the Alltoall with FFT/tridiagonal work (pipelined transposes) | hard | up to ~5 ms | needed beyond ~78% |
+
+Without overlap (E), the 7 ms of data movement per solve remains: ~78% is the ceiling for the solve
+changes alone.
 
 ## To do
 
-- [ ] Poisson solve alone, 1 vs 2 GPUs (solver vs rest of the model).
+- [x] Poisson solve alone, 1 vs 2 GPUs (`--parts`), and a profile of the FT solve (`--profile`).
+- [ ] Follow the Oceananigans Discussion; if welcome, try A and B (separate environment, compare with
+      the tables above).
+- [ ] Profile the FFT solver the same way.
 - [ ] FFT on 4 GPUs (strong scaling).
 - [ ] Weak scaling on 2 and 4 idle GPUs (memory per GPU at fixed local size answers how big a problem fits).
 - [ ] Nibi (H100): 1, 2, 4, 8 GPUs, then 2 nodes (expected worse across nodes), if useful for the RAC proposal.
