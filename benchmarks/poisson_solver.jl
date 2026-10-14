@@ -22,8 +22,10 @@
 #   --profile=false      true: 3 more solves inside CUDA.@profile external=true, for
 #                        nsys profile --capture-range=cudaProfilerApi
 #
-# Prints one line starting with "RESULT poisson". p_rms (root-mean-square pressure over the whole
-# grid) should agree between 1 and N GPUs and between MPI and NCCL, to roundoff: a correctness check.
+# Prints one line starting with "RESULT poisson". Correctness check: p_std (root-mean-square of the
+# pressure about its mean, over the whole grid) should agree between 1 and N GPUs and between MPI
+# and NCCL to roundoff. p_mean may differ: pressure is defined up to a constant, and the serial and
+# distributed solvers may fix that constant differently (harmless: only gradients are used).
 
 using Oceananigans
 using Oceananigans.Models.NonhydrostaticModels: nonhydrostatic_pressure_solver, solve_for_pressure!
@@ -149,10 +151,13 @@ end
 
 # ---------------------------------------------------------------- correctness and memory
 solve(); sync()
-local_sq = sum(abs2, Array(interior(pressure)))
-local_ok = isfinite(local_sq)
-p_rms    = sqrt(MPI.Allreduce(local_sq, +, comm) / (Nx * Ny * Nz))
+p_local  = Array(interior(pressure))
+local_ok = all(isfinite, p_local)
 all_ok   = MPI.Allreduce(local_ok ? 1 : 0, MPI.MIN, comm) == 1
+ncells   = Nx * Ny * Nz
+p_mean   = MPI.Allreduce(sum(Float64, p_local), +, comm) / ncells
+p_rms    = sqrt(MPI.Allreduce(sum(abs2, Float64.(p_local)), +, comm) / ncells)
+p_std    = sqrt(MPI.Allreduce(sum(x -> (x - p_mean)^2, Float64.(p_local)), +, comm) / ncells)
 
 # GPU memory of THIS process (nvidia-smi), and whether another process shares our GPU
 function gpu_usage()
@@ -180,8 +185,8 @@ memory = MPI.Allreduce(memory, MPI.MAX, comm)
 shared = MPI.Allreduce(shared ? 1 : 0, MPI.MAX, comm) == 1
 shared && say("WARNING: another process was using one of our GPUs: timings and memory are not reliable")
 
-say(@sprintf("RESULT poisson solver=%s size=%dx%dx%d gpus=%d comm=%s float=%s t_solve_min_ms=%.3f t_solve_median_ms=%.3f t_transposes_ms=%.3f p_rms=%.10e mem_GiB=%.2f finite=%s shared_gpu=%s gpu=\"%s\"",
+say(@sprintf("RESULT poisson solver=%s size=%dx%dx%d gpus=%d comm=%s float=%s t_solve_min_ms=%.3f t_solve_median_ms=%.3f t_transposes_ms=%.3f p_std=%.12e p_mean=%.6e p_rms=%.10e mem_GiB=%.2f finite=%s shared_gpu=%s gpu=\"%s\"",
              solver_name, Nx, Ny, Nz, nranks, comm_name, FT, 1e3 * minimum(times), 1e3 * median(times),
-             1e3 * t_trans, p_rms, memory / 2^30, all_ok, shared, CUDA.name(CUDA.device())))
+             1e3 * t_trans, p_std, p_mean, p_rms, memory / 2^30, all_ok, shared, CUDA.name(CUDA.device())))
 
 all_ok || error("non-finite pressure")

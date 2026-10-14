@@ -96,8 +96,9 @@ CUDA API summary (time the host spends waiting in `cuStreamSynchronize`/`cuCtxSy
 Times `solve_for_pressure!` (source term + distributed Poisson solve, built exactly as
 `NonhydrostaticModel` builds it) without the rest of the model, with MPI or Oceananigans'
 `NCCLDistributed` for the transposes. Prints `RESULT poisson ...` with the time per solve, the time of
-the two transposes, GPU memory, and `p_rms`, which must agree between 1 and N GPUs and between MPI
-and NCCL (correctness check).
+the two transposes, GPU memory, and `p_std` (pressure variation about its mean), which must agree
+between 1 and N GPUs and between MPI and NCCL to roundoff (correctness check; `p_mean` may differ,
+since pressure is defined up to a constant).
 
 NCCL needs NCCL.jl, which is not in the main environment: make a separate test environment once
 (same versions as the main Manifest, plus NCCL; `envs/` is not committed):
