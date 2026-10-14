@@ -1,0 +1,146 @@
+diff --git a/benchmarking/run_benchmarks.jl b/benchmarking/run_benchmarks.jl
+index 713c203..f15075d 100644
+--- a/benchmarking/run_benchmarks.jl
++++ b/benchmarking/run_benchmarks.jl
+@@ -44,6 +44,17 @@ using Oceananigans.TurbulenceClosures: CATKEVerticalDiffusivity, SmagorinskyLill
+     IsopycnalSkewSymmetricDiffusivity, HorizontalScalarBiharmonicDiffusivity
+ 
+ using Printf: @printf, @sprintf
++
++# --comm NCCL: load NCCL.jl (Oceananigans' NCCL extension, NCCLDistributed) before anything runs.
++# NCCL.jl must be in this environment (Pkg.add("NCCL")); MPI runs never load it.
++const USE_NCCL = let i = findfirst(a -> a == "--comm" || startswith(a, "--comm="), ARGS)
++    i === nothing ? false :
++    uppercase(ARGS[i] == "--comm" ? get(ARGS, i + 1, "") : split(ARGS[i], '=', limit=2)[2]) == "NCCL"
++end
++USE_NCCL && @eval using NCCL
++
++# The MPI communicator of an architecture (NCCLDistributed wraps it, with the NCCL communicator).
++mpi_communicator(arch) = hasproperty(arch.communicator, :mpi) ? arch.communicator.mpi : arch.communicator
+ using Dates: DateTime, now, UTC
+ 
+ #####
+@@ -83,6 +94,11 @@ function parse_commandline()
+             arg_type = String
+             default = "2x2x1"
+ 
++        "--comm"
++            help = "Communication for --distributed: MPI (Distributed) or NCCL (NCCLDistributed; needs NCCL.jl)."
++            arg_type = String
++            default = "MPI"
++
+         "--case"
+             help = "Benchmark case: earth_ocean"
+             arg_type = String
+@@ -304,14 +320,23 @@ make_timestepper(name) = Symbol(name)
+ function run_benchmarks(args)
+     mode = args["mode"]
+ 
++    # Use the system Open MPI's plugins (env/drac.sh in Oceananigans-DRAC exports OCEAN_MPI_ROOT):
++    # OpenMPI_jll, loaded by NetCDF/HDF5, can otherwise redirect them.
++    haskey(ENV, "OCEAN_MPI_ROOT") && (ENV["OPAL_PREFIX"] = ENV["OCEAN_MPI_ROOT"])
+ 
+     distributed_enabled = args["distributed"]
+     partition_ranks = parse_size(args["partition"])
+ 
+     if distributed_enabled
+-        arch = Distributed(make_architecture(args["device"]), partition = Partition(partition_ranks...))
+-        ranks = mpi_size(arch.communicator)
+-        @root @info "Distributed run: $ranks ranks (x=$(partition_ranks[1]), y=$(partition_ranks[2]), z=$(partition_ranks[3]))"
++        comm = uppercase(args["comm"])
++        comm in ("MPI", "NCCL") || error("--comm must be MPI or NCCL")
++        comm == "NCCL" && !USE_NCCL && error("--comm NCCL: NCCL.jl was not loaded")
++        partition = Partition(partition_ranks...)
++        arch = comm == "NCCL" ?
++            Oceananigans.DistributedComputations.NCCLDistributed(make_architecture(args["device"]); partition) :
++            Distributed(make_architecture(args["device"]); partition)
++        ranks = mpi_size(mpi_communicator(arch))
++        @root @info "Distributed run ($comm): $ranks ranks (x=$(partition_ranks[1]), y=$(partition_ranks[2]), z=$(partition_ranks[3]))"
+     else
+         arch = make_architecture(args["device"])
+     end
+@@ -539,7 +564,7 @@ function main()
+         json_entries = JSON.parse(JSON.json(results))
+ 
+         if distributed_enabled
+-            comm = arch.communicator
++            comm = mpi_communicator(arch)
+             ranks = mpi_size(comm)
+ 
+             # Tag each entry with its MPI rank
+diff --git a/benchmarking/src/utils.jl b/benchmarking/src/utils.jl
+index ade7576..7ad0004 100644
+--- a/benchmarking/src/utils.jl
++++ b/benchmarking/src/utils.jl
+@@ -111,7 +111,7 @@ function benchmark_time_stepping(model;
+     steps_per_second = 1 / time_per_step_seconds
+     grid_points_per_second = total_points / time_per_step_seconds
+ 
+-    gpu_memory_used = arch isa GPU ? CUDACore.MemoryInfo().pool_used_bytes : 0
++    gpu_memory_used = Oceananigans.Architectures.child_architecture(arch) isa GPU ? CUDACore.MemoryInfo().pool_used_bytes : 0
+     metadata = BenchmarkMetadata(arch)
+ 
+     result = BenchmarkResult(
+@@ -137,12 +137,12 @@ function benchmark_time_stepping(model;
+         @info "    Total time: $(@sprintf("%.3f", total_time_seconds)) s"
+         @info "    Time per step: $(@sprintf("%.6f", time_per_step_seconds)) s (min of $samples windows; median $(@sprintf("%.6f", time_per_step_median_seconds)) s, max $(@sprintf("%.6f", time_per_step_max_seconds)) s)"
+         @info "    Grid points/s: $(@sprintf("%.2e", grid_points_per_second))"
+-        if arch isa GPU
++        if Oceananigans.Architectures.child_architecture(arch) isa GPU
+             @info "    GPU memory usage: $(Base.format_bytes(gpu_memory_used))"
+         end
+     end
+ 
+-    if arch isa GPU
++    if Oceananigans.Architectures.child_architecture(arch) isa GPU
+         CUDA.reclaim()
+     end
+ 
+@@ -262,7 +262,7 @@ function run_benchmark_simulation(model;
+     steps_per_second = time_steps / wall_time_seconds
+     grid_points_per_second = total_points / time_per_step_seconds
+ 
+-    gpu_memory_used = arch isa GPU ? CUDACore.MemoryInfo().pool_used_bytes : 0
++    gpu_memory_used = Oceananigans.Architectures.child_architecture(arch) isa GPU ? CUDACore.MemoryInfo().pool_used_bytes : 0
+     metadata = BenchmarkMetadata(arch)
+ 
+     result = SimulationResult(
+@@ -290,12 +290,12 @@ function run_benchmark_simulation(model;
+         @info "    Grid points/s: $(@sprintf("%.2e", grid_points_per_second))"
+         @info "    Surface timeseries: $output_filename"
+         @info "    Final 3D snapshot: $final_filename"
+-        if arch isa GPU
++        if Oceananigans.Architectures.child_architecture(arch) isa GPU
+             @info "    GPU memory usage: $(Base.format_bytes(gpu_memory_used))"
+         end
+     end
+ 
+-    if arch isa GPU
++    if Oceananigans.Architectures.child_architecture(arch) isa GPU
+         CUDA.reclaim()
+     end
+ 
+@@ -446,7 +446,7 @@ function run_io_benchmark(model;
+                   zarr_chunk_shape(output_filename, "T") :
+                   nothing
+ 
+-    gpu_memory_used = arch isa GPU ? CUDACore.MemoryInfo().pool_used_bytes : 0
++    gpu_memory_used = Oceananigans.Architectures.child_architecture(arch) isa GPU ? CUDACore.MemoryInfo().pool_used_bytes : 0
+     metadata = BenchmarkMetadata(arch)
+ 
+     result = IOBenchmarkResult(
+@@ -479,12 +479,12 @@ function run_io_benchmark(model;
+         if !isnothing(chunk_shape)
+             @info "    Chunk shape: $(Tuple(chunk_shape))"
+         end
+-        if arch isa GPU
++        if Oceananigans.Architectures.child_architecture(arch) isa GPU
+             @info "    GPU memory usage: $(Base.format_bytes(gpu_memory_used))"
+         end
+     end
+ 
+-    if arch isa GPU
++    if Oceananigans.Architectures.child_architecture(arch) isa GPU
+         CUDA.reclaim()
+     end
+ 

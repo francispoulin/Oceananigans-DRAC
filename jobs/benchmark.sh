@@ -8,6 +8,8 @@
 #
 # Settings through environment variables, for example
 #     sbatch --export=ALL,SIZE=2880x1440x200 ... jobs/benchmark.sh
+# COMM=NCCL uses NCCLDistributed (needs a suite set up with setup/setup_benchmark_suite.sh, which
+# adds --comm and NCCL.jl; not available in the Nibi checkout). Default: MPI (option not passed).
 #SBATCH --job-name=bench
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=2
@@ -41,10 +43,14 @@ PARTITION=${PARTITION:-${NGPU}x1x1}   # default: split in x only; e.g. PARTITION
 if (( NGPU > 1 )); then
     # Nx (and Ny, for a 2D split) must be divisible by the number of ranks in that direction.
     ARGS+=( --distributed --partition="$PARTITION" )
+    [[ -n "$COMM" ]] && ARGS+=( --comm="$COMM" )
 fi
 
-echo "Job ${SLURM_JOB_ID}: ${NGPU} GPU(s) on ${SLURM_JOB_NUM_NODES} node(s), size ${SIZE}"
+echo "Job ${SLURM_JOB_ID} on ${CC_CLUSTER:-?}: ${NGPU} GPU(s) on ${SLURM_JOB_NUM_NODES} node(s), size ${SIZE}, comm ${COMM:-MPI}"
 echo "Arguments: ${ARGS[*]}"
 srun bash -c 'echo "  task $SLURM_PROCID on $(hostname): $(nvidia-smi -L)"'
 julia --project=. -e 'using Pkg; Pkg.precompile()'
+if [[ "${COMM^^}" == NCCL ]]; then     # compile NCCL with one process before the ranks start
+    julia --project=. -e 'using Oceananigans, CUDA, NCCL'
+fi
 srun --cpu-bind=none julia --project=. run_benchmarks.jl "${ARGS[@]}"
