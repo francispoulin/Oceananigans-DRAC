@@ -67,7 +67,8 @@ GPUs** before using these numbers.
 ## Where the time goes
 
 All on pelee (same hardware as rondeau: 2 × A100-SXM4-40GB, NVLink), Oct 13, 512 × 512 × 256.
-Posted as an Oceananigans Discussion (Oct 13, 2026) with the roadmap below.
+Posted as Oceananigans Discussion [#6248](https://github.com/CliMA/Oceananigans.jl/discussions/6248)
+(Oct 13, 2026) with the roadmap below; earlier multi-GPU write-up: [#6164](https://github.com/CliMA/Oceananigans.jl/issues/6164).
 
 ### The MPI Alltoall alone (`benchmarks/alltoall_bandwidth.jl`)
 
@@ -135,7 +136,7 @@ changes alone.
 ## To do
 
 - [x] Poisson solve alone, 1 vs 2 GPUs (`--parts`), and a profile of the FT solve (`--profile`).
-- [ ] Follow the Oceananigans Discussion; if welcome, try A and B (separate environment, compare with
+- [ ] Follow Discussion #6248; if welcome, try A and B (separate environment, compare with
       the tables above).
 - [ ] Profile the FFT solver the same way.
 - [ ] FFT on 4 GPUs (strong scaling).
