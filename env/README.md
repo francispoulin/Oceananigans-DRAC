@@ -29,3 +29,6 @@ plus the modules that put `julia` and the system `mpiexec` on `PATH`.
 Optional: `OCEAN_JOB_DIR`, where scripts write logs and results from inside jobs when the
 repository is not writable from compute nodes (set on Trillium to `$SCRATCH/oceananigans-drac`;
 default: the repository).
+
+Ocean data: `OCEAN_DATA_DIR` (default: `ocean_data` next to the Julia depot), also exported as
+`NUMERICALEARTH_DATA_DIRECTORY`, so NumericalEarth stores and finds ECCO, EN4, ETOPO, JRA55… there.

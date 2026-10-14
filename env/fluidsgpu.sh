@@ -50,3 +50,10 @@ export JULIA_NUM_PRECOMPILE_TASKS="${JULIA_NUM_PRECOMPILE_TASKS:-2}"
 unset _fluids_depot _fluids_default_depot
 
 echo "Oceananigans-DRAC environment ($OCEAN_MACHINE): repo=$OCEANANIGANS_DRAC_ROOT, depot=$JULIA_DEPOT_PATH"
+
+# Ocean data (ECCO, EN4, ETOPO, ...): a folder next to the Julia depot unless OCEAN_DATA_DIR is
+# already set. NumericalEarth reads and downloads its datasets there. Download on a login node
+# (compute nodes have no internet, and on Trillium they can't write to /project).
+export OCEAN_DATA_DIR="${OCEAN_DATA_DIR:-$(dirname "${JULIA_DEPOT_PATH##*:}")/ocean_data}"
+export NUMERICALEARTH_DATA_DIRECTORY="${NUMERICALEARTH_DATA_DIRECTORY:-$OCEAN_DATA_DIR}"
+echo "  ocean data: $OCEAN_DATA_DIR"
