@@ -26,7 +26,7 @@ if [[ ! -d "$BENCH_ROOT/.git" ]]; then
     git clone https://github.com/CliMA/Oceananigans.jl.git "$BENCH_ROOT"
 fi
 cd "$BENCH_ROOT"
-if git apply --reverse --check "$PATCH" 2>/dev/null; then
+if grep -q -- '"--comm"' benchmarking/run_benchmarks.jl 2>/dev/null; then    # our patch adds --comm
     echo "   suite patch already applied"
 else
     [[ -z "$(git status --porcelain --untracked-files=no)" ]] || {
@@ -35,6 +35,25 @@ else
     git checkout -q "$COMMIT"
     git apply "$PATCH"
     echo "   checked out $(git log --oneline -1) and applied the suite patch"
+fi
+
+# GPU memory in the results: the suite reads the size of CUDA.jl's memory pool, which is `nothing`
+# when the pool is off (JULIA_CUDA_MEMORY_POOL=none, set by env/drac.sh since Oct 15, 2026 for
+# fast GPU-to-GPU MPI), and then fails when it writes the results ("Cannot convert Nothing to Int64").
+# Use the memory in use on the device instead when there is no pool. Idempotent.
+U="$BENCH_ROOT/benchmarking/src/utils.jl"
+if ! grep -q "gpu_memory_in_use" "$U"; then
+    sed -i 's/CUDACore\.MemoryInfo()\.pool_used_bytes/gpu_memory_in_use()/g' "$U"
+    cat >> "$U" <<'JL'
+
+# Added by Oceananigans-DRAC setup/setup_benchmark_suite.sh: works with the memory pool off too.
+function gpu_memory_in_use()
+    m = CUDACore.MemoryInfo()
+    p = m.pool_used_bytes
+    return p isa Integer ? Int(p) : Int(m.total_bytes - m.free_bytes)
+end
+JL
+    echo "   GPU-memory fix applied to src/utils.jl"
 fi
 
 echo "== 2. System MPI for benchmarking/ (configure_mpi.sh)"
