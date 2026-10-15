@@ -151,6 +151,14 @@ Single jobs: `jobs/benchmark_poisson.sh` (settings as environment variables; see
 On rondeau (4 × A100, NVLink), NCCL was ~5% slower than MPI on 2 GPUs and ~26% faster on 4; across
 nodes the difference may be larger.
 
+### Larger grid: 1024³ in Float32
+
+`jobs/submit_poisson_1024.sh` runs the solver alone on a 1024³ grid in Float32 (fits on one
+H100-80GB, ~38 GiB) on 1, 2, 4 and 8 GPUs with MPI and NCCL (7 jobs). Motivation: GPU FFT libraries
+scale better on larger grids (Verma et al. 2022, arXiv:2202.12756: 1024³ 2→4 GPUs ~90% vs ~77% at
+512³). On rondeau, 512³ gave the same efficiencies as 512²×256 (1→2: 35%; 1→4: MPI 28%, NCCL 39%),
+so our costs grow with the data; this checks it on H100 nodes.
+
 ## `alltoall_bandwidth.jl`
 
 Times only the GPU-to-GPU `MPI_Alltoall` that each transpose of the distributed Poisson solvers
