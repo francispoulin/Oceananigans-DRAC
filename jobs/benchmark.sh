@@ -17,7 +17,7 @@
 #SBATCH --ntasks-per-node=2
 #SBATCH --gpus-per-node=h100:1      # submit_*.sh pass h100:<tasks per node> (jobs/gpu_request.sh)
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+# (no #SBATCH --mem: Trillium rejects it; submit_*.sh pass --mem elsewhere, see jobs/gpu_request.sh)
 #SBATCH --time=1:20:00
 #SBATCH --output=%x_%j.out
 
