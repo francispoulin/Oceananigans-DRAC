@@ -8,7 +8,7 @@
 #
 # or submit the whole MPI-vs-NCCL set with jobs/submit_poisson_scaling.sh.
 # Settings through environment variables: SIZE (GLOBAL grid, default 512x512x256), SOLVER
-# (FourierTridiagonal | FFT), COMM (MPI | NCCL), FLOAT (Float64), REPS, WINDOWS, PROJECT
+# (FourierTridiagonal | FFT), COMM (MPI | NCCL), FLOAT (Float64), REPS, WINDOWS, JULIA_ENV
 # (default envs/nccl). Fir and Rorqual: 4 GPUs per node.
 #SBATCH --job-name=poisson
 #SBATCH --nodes=1
@@ -23,13 +23,13 @@ cd "$SLURM_SUBMIT_DIR"
 source env/ocean_setup.sh
 set -eo pipefail          # after loading modules, as module commands can return harmless errors
 
-PROJECT="${PROJECT:-envs/nccl}"
-[[ -f "$PROJECT/Project.toml" ]] || { echo "no environment in $PROJECT: run setup/setup_nccl_env.sh on a login node first"; exit 1; }
+JULIA_ENV="${JULIA_ENV:-envs/nccl}"   # not PROJECT: the Alliance clusters set $PROJECT to your project space
+[[ -f "$JULIA_ENV/Project.toml" ]] || { echo "no environment in $JULIA_ENV: run setup/setup_nccl_env.sh on a login node first"; exit 1; }
 ARGS=( --size="${SIZE:-512x512x256}" --solver="${SOLVER:-FourierTridiagonal}" --comm="${COMM:-MPI}"
        --float="${FLOAT:-Float64}" --reps="${REPS:-20}" --windows="${WINDOWS:-5}" )
 
 echo "Job ${SLURM_JOB_ID} on ${CC_CLUSTER:-?}: ${SLURM_NTASKS} GPU(s) on ${SLURM_JOB_NUM_NODES} node(s): ${ARGS[*]}"
 srun bash -c 'echo "  task $SLURM_PROCID on $(hostname): $(nvidia-smi -L)"'
 # Compile once with ONE process before the ranks start (ranks compiling NCCL together fail).
-julia --project="$PROJECT" -e 'using Pkg; Pkg.precompile(); using Oceananigans, CUDA, NCCL'
-srun --cpu-bind=none julia --project="$PROJECT" benchmarks/poisson_solver.jl "${ARGS[@]}"
+julia --project="$JULIA_ENV" -e 'using Pkg; Pkg.precompile(); using Oceananigans, CUDA, NCCL'
+srun --cpu-bind=none julia --project="$JULIA_ENV" benchmarks/poisson_solver.jl "${ARGS[@]}"
