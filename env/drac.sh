@@ -71,6 +71,12 @@ export JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-1}"
 # threads that login nodes refuse them ("Resource temporarily unavailable").
 export JULIA_NUM_PRECOMPILE_TASKS="${JULIA_NUM_PRECOMPILE_TASKS:-2}"
 
+# CUDA-aware MPI between GPUs needs CUDA.jl's memory pool off. GPU arrays from the pool can't be
+# shared with another process through CUDA IPC, so UCX silently copies them through the host instead
+# of GPU to GPU: on Nibi (2 x H100, NVLink) MPI_Alltoall ran at 15 GB/s with the pool and 294 GB/s
+# without it (Oct 15, 2026). tools/run_local.sh sets the same on pelee/rondeau. NCCL is unaffected.
+export JULIA_CUDA_MEMORY_POOL="${JULIA_CUDA_MEMORY_POOL:-none}"
+
 echo "Oceananigans-DRAC environment (${CC_CLUSTER:-unknown cluster}): repo=$OCEANANIGANS_DRAC_ROOT, depot=$JULIA_DEPOT_PATH"
 
 
