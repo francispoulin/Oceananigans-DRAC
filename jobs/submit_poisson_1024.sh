@@ -10,7 +10,8 @@
 #     MAXNODES=1 bash jobs/submit_poisson_1024.sh         # one node only (Fir: 1, 2, 4 GPUs; 5 jobs)
 #     DRYRUN=1 bash jobs/submit_poisson_1024.sh        # show the sbatch commands only
 #
-# Results:  grep -ah "^RESULT poisson" logs/p1024_*.out
+# Results:  grep -ah "^RESULT poisson" logs/p1024_*.out   (Trillium: $OCEAN_JOB_DIR/logs/)
+# Trillium: 2-GPU runs use a whole 4-GPU node (only 1 GPU or whole nodes can be requested there).
 # Expected memory (from 512^3 on rondeau): ~38 GiB on 1 GPU, ~20 GiB per GPU on 2, ~11 on 4.
 
 set -eo pipefail
@@ -21,13 +22,12 @@ MAXNODES="${MAXNODES:-2}"
 SIZE="${SIZE:-1024x1024x1024}"
 FLOAT="${FLOAT:-Float32}"
 SOLVER="${SOLVER:-FourierTridiagonal}"
-mkdir -p logs
+source jobs/gpu_request.sh
 
 submit() {   # name nodes tasks_per_node comm
-    local mem="--mem=128G"
-    [[ "$3" -eq "$G" ]] && mem="--mem=0"           # full node
-    local cmd=(sbatch --job-name="$1" --nodes="$2" --ntasks-per-node="$3" "$mem"
-               --output="logs/%x_%j.out"
+    gpu_request "$3" 128G
+    local cmd=(sbatch --job-name="$1" --nodes="$2" --ntasks-per-node="$3" "${GPU_OPTS[@]}"
+               --output="$JOB_LOGS/%x_%j.out"
                --export="ALL,SIZE=$SIZE,COMM=$4,SOLVER=$SOLVER,FLOAT=$FLOAT"
                jobs/benchmark_poisson.sh)
     if [[ -n "$DRYRUN" ]]; then echo "${cmd[*]}"; else "${cmd[@]}"; fi
@@ -41,4 +41,4 @@ for comm in MPI NCCL; do
         submit "p1024_${comm}_${n}gpu" "$nodes" "$(( n / nodes ))" "$comm"
     done
 done
-echo "Submitted. Check with: squeue -u \$USER;  results: grep -ah '^RESULT poisson' logs/p1024_*.out"
+echo "Submitted. Check with: squeue -u \$USER;  results: grep -ah '^RESULT poisson' $JOB_LOGS/p1024_*.out"

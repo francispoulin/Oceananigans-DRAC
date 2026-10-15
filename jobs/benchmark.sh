@@ -1,10 +1,12 @@
 #!/bin/bash
+# Always give --gpus-per-node=h100:<ranks per node> (all ranks see all the node's GPUs; never
+# --gpus-per-task, see jobs/gpu_request.sh), or submit with the jobs/submit_*.sh scripts.
 # Oceananigans benchmark suite on any number of GPUs, as used for the Nibi scaling results.
 # Runs the benchmarks in an Oceananigans checkout (its benchmarking/ folder), which needs the
 # same MPI setup as this repository: see docs/drac.md, `section 8`.
 #
-#     sbatch --job-name=bench_gpu4  --nodes=1 --ntasks-per-node=4 jobs/benchmark.sh
-#     sbatch --job-name=bench_gpu16 --nodes=2 --ntasks-per-node=8 --mem=0 jobs/benchmark.sh
+#     sbatch --job-name=bench_gpu4  --nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 jobs/benchmark.sh
+#     sbatch --job-name=bench_gpu16 --nodes=2 --ntasks-per-node=8 --gpus-per-node=h100:8 --mem=0 jobs/benchmark.sh
 #
 # Settings through environment variables, for example
 #     sbatch --export=ALL,SIZE=2880x1440x200 ... jobs/benchmark.sh
@@ -13,7 +15,7 @@
 #SBATCH --job-name=bench
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=2
-#SBATCH --gpus-per-task=h100:1
+#SBATCH --gpus-per-node=h100:1      # submit_*.sh pass h100:<tasks per node> (jobs/gpu_request.sh)
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=1:20:00
@@ -51,6 +53,8 @@ echo "Arguments: ${ARGS[*]}"
 srun bash -c 'echo "  task $SLURM_PROCID on $(hostname): $(nvidia-smi -L)"'
 julia --project=. -e 'using Pkg; Pkg.precompile()'
 if [[ "${COMM^^}" == NCCL ]]; then     # compile NCCL with one process before the ranks start
-    julia --project=. -e 'using Oceananigans, CUDA, NCCL'
+    julia --project=. -e 'using Oceananigans, CUDA, NCCL
+        println("  CUDA driver ", CUDA.driver_version(), ", runtime ", CUDA.runtime_version(), ", NCCL ", try NCCL.version() catch; "?" end)' || {
+        echo "ERROR loading CUDA/NCCL on $(hostname): rerun setup/setup_benchmark_suite.sh on a login node with GPUs"; exit 1; }
 fi
 srun --cpu-bind=none julia --project=. run_benchmarks.jl "${ARGS[@]}"

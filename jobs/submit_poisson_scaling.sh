@@ -19,13 +19,12 @@ cd "$OCEANANIGANS_DRAC_ROOT"
 G="${GPUS_PER_NODE:-4}"
 MAXNODES="${MAXNODES:-4}"
 SOLVER="${SOLVER:-FourierTridiagonal}"
-mkdir -p logs
+source jobs/gpu_request.sh
 
 submit() {   # name nodes tasks_per_node size comm
-    local mem="--mem=64G"
-    [[ "$3" -eq "$G" ]] && mem="--mem=0"           # full node
-    local cmd=(sbatch --job-name="$1" --nodes="$2" --ntasks-per-node="$3" "$mem"
-               --output="logs/%x_%j.out" --export="ALL,SIZE=$4,COMM=$5,SOLVER=$SOLVER"
+    gpu_request "$3" 64G
+    local cmd=(sbatch --job-name="$1" --nodes="$2" --ntasks-per-node="$3" "${GPU_OPTS[@]}"
+               --output="$JOB_LOGS/%x_%j.out" --export="ALL,SIZE=$4,COMM=$5,SOLVER=$SOLVER"
                jobs/benchmark_poisson.sh)
     if [[ -n "$DRYRUN" ]]; then echo "${cmd[*]}"; else "${cmd[@]}"; fi
 }
@@ -40,4 +39,4 @@ for comm in MPI NCCL; do
         submit "p_weak_${comm}_${n}gpu"   "$nodes" "$tasks" "$(( 512 * n ))x512x256" "$comm"
     done
 done
-echo "Submitted. Check with: squeue -u \$USER;  results: grep -ah '^RESULT poisson' logs/p_*.out"
+echo "Submitted. Check with: squeue -u \$USER;  results: grep -ah '^RESULT poisson' $JOB_LOGS/p_*.out"

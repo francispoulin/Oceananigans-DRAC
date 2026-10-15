@@ -20,15 +20,14 @@ SIZE="${SIZE:-1440x720x200}"
 export BENCH_DIR="${BENCH_DIR:-$SCRATCH/software/Oceananigans.jl/benchmarking}"
 [[ -f "$BENCH_DIR/run_benchmarks.jl" ]] || { echo "no suite in $BENCH_DIR: run setup/setup_benchmark_suite.sh"; exit 1; }
 grep -q -- '"--comm"' "$BENCH_DIR/run_benchmarks.jl" || { echo "suite in $BENCH_DIR has no --comm option: run setup/setup_benchmark_suite.sh"; exit 1; }
-mkdir -p logs
+source jobs/gpu_request.sh
 
 submit() {   # name nodes tasks_per_node comm
-    local mem="--mem=64G"
-    [[ "$3" -eq "$G" ]] && mem="--mem=0"
+    gpu_request "$3" 64G
     local exports="ALL,SIZE=$SIZE,BENCH_DIR=$BENCH_DIR"
     [[ -n "$4" ]] && exports="$exports,COMM=$4"
-    local cmd=(sbatch --job-name="$1" --nodes="$2" --ntasks-per-node="$3" "$mem"
-               --output="logs/%x_%j.out" --export="$exports" jobs/benchmark.sh)
+    local cmd=(sbatch --job-name="$1" --nodes="$2" --ntasks-per-node="$3" "${GPU_OPTS[@]}"
+               --output="$JOB_LOGS/%x_%j.out" --export="$exports" jobs/benchmark.sh)
     if [[ -n "$DRYRUN" ]]; then echo "${cmd[*]}"; else "${cmd[@]}"; fi
 }
 

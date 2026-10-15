@@ -1,0 +1,29 @@
+#!/bin/bash
+# Slurm options for a GPU job with one MPI rank per GPU, for the submit_*.sh scripts (source it).
+#
+#     gpu_request <tasks per node> <memory when not a full node>   ->  sets the array GPU_OPTS
+#
+# Every rank sees ALL the GPUs of its node (--gpus-per-node), and Oceananigans' Distributed(GPU())
+# picks one per rank by node-local rank. With --gpus-per-task, Slurm fences each rank off so it
+# sees only its own GPU; CUDA-aware MPI then can't reach the other GPUs' memory directly and copies
+# everything through the host (Nibi, Oct 15: 1024^3 transposes ~25 GB/s instead of NVLink speed),
+# and NCCL fails (ncclUnhandledCudaError). The benchmarks print shared_gpu=true if two ranks ever
+# pick the same GPU.
+#
+# Trillium: only 1 GPU or whole nodes (4 GPUs), no --mem; 2 ranks run on a whole 4-GPU node.
+# Elsewhere (Nibi, Fir, Rorqual): h100 GPUs (not MIG slices), --mem=0 for a full node.
+# GPUS_PER_NODE: 4 (Fir, Rorqual, Trillium) or 8 (Nibi).
+
+gpu_request() {
+    local tasks="$1" mem="$2" g="${GPUS_PER_NODE:-4}"
+    if [[ "$CC_CLUSTER" == trillium ]]; then
+        GPU_OPTS=( --gpus-per-node="$(( tasks == 1 ? 1 : 4 ))" )
+    else
+        GPU_OPTS=( --gpus-per-node="h100:$tasks" )
+        if (( tasks == g )); then GPU_OPTS+=( --mem=0 ); else GPU_OPTS+=( --mem="$mem" ); fi
+    fi
+}
+
+# Logs: the repository, or $OCEAN_JOB_DIR where jobs can't write to it (Trillium: $SCRATCH).
+JOB_LOGS="${OCEAN_JOB_DIR:-${OCEANANIGANS_DRAC_ROOT:-.}}/logs"
+mkdir -p "$JOB_LOGS"
