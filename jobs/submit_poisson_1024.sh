@@ -1,11 +1,13 @@
 #!/bin/bash
 # Pressure solver alone at 1024^3 in Float32 (fits on ONE H100-80GB: ~38 GiB), MPI vs NCCL, on a
-# cluster with 4 GPUs per node (Fir, Rorqual): 1 GPU, 2 and 4 GPUs on one node, 8 GPUs on 2 nodes.
+# any cluster: 1, 2, 4 and 8 GPUs, on as few nodes as possible (Fir, Rorqual: 4 GPUs per node, so
+# 8 GPUs = 2 nodes; Nibi: GPUS_PER_NODE=8, so everything on one node).
 # Strong scaling only (same 1024^3 grid on all). From the repository root, on a login node, after
 # ocean_setup and bash setup/setup_nccl_env.sh (once per cluster):
 #
-#     bash jobs/submit_poisson_1024.sh                 # 7 jobs
-#     MAXNODES=1 bash jobs/submit_poisson_1024.sh      # 1, 2, 4 GPUs only (5 jobs)
+#     bash jobs/submit_poisson_1024.sh                    # Fir, Rorqual (7 jobs)
+#     GPUS_PER_NODE=8 bash jobs/submit_poisson_1024.sh    # Nibi (7 jobs, all on one node)
+#     MAXNODES=1 bash jobs/submit_poisson_1024.sh         # one node only (Fir: 1, 2, 4 GPUs; 5 jobs)
 #     DRYRUN=1 bash jobs/submit_poisson_1024.sh        # show the sbatch commands only
 #
 # Results:  grep -ah "^RESULT poisson" logs/p1024_*.out
@@ -33,10 +35,10 @@ submit() {   # name nodes tasks_per_node comm
 
 submit p1024_1gpu 1 1 MPI
 for comm in MPI NCCL; do
-    for layout in "1 2" "1 $G" "2 $G"; do
-        read -r nodes tasks <<<"$layout"
+    for n in 2 4 8; do
+        nodes=$(( (n + G - 1) / G ))
         (( nodes > MAXNODES )) && continue
-        submit "p1024_${comm}_$(( nodes * tasks ))gpu" "$nodes" "$tasks" "$comm"
+        submit "p1024_${comm}_${n}gpu" "$nodes" "$(( n / nodes ))" "$comm"
     done
 done
 echo "Submitted. Check with: squeue -u \$USER;  results: grep -ah '^RESULT poisson' logs/p1024_*.out"
