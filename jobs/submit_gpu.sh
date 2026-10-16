@@ -24,6 +24,9 @@ set -eo pipefail
     echo "usage: bash jobs/submit_gpu.sh <job script> <number of GPUs> [sbatch options...]"; exit 1; }
 script="$1"; n="$2"; shift 2
 [[ -f "$script" ]] || { echo "no such job script: $script"; exit 1; }
+[[ -n "$DRYRUN" ]] || command -v sbatch >/dev/null || {
+    echo "no Slurm on this machine ($(hostname -s)): submit from an Alliance cluster;"
+    echo "on pelee/rondeau use tools/run_local.sh instead (or DRYRUN=1 to see the sbatch command)"; exit 1; }
 
 source "$OCEANANIGANS_DRAC_ROOT/jobs/gpu_request.sh"
 g="${GPUS_PER_NODE:-$(default_gpus_per_node)}"
