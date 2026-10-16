@@ -12,10 +12,14 @@
 #
 # Trillium: only 1 GPU or whole nodes (4 GPUs), no --mem; 2 ranks run on a whole 4-GPU node.
 # Elsewhere (Nibi, Fir, Rorqual): h100 GPUs (not MIG slices), --mem=0 for a full node.
-# GPUS_PER_NODE: 4 (Fir, Rorqual, Trillium) or 8 (Nibi).
+# GPUS_PER_NODE: 4 (Fir, Rorqual, Trillium) or 8 (Nibi); the default follows $CC_CLUSTER, so it
+# only needs setting to override. (Oct 16: with the old default of 4, a 4-GPU job on Nibi asked
+# for --mem=0 on half a node and sbatch refused it; 8-GPU jobs got --mem=<mem> instead of the node.)
+
+default_gpus_per_node() { [[ "$CC_CLUSTER" == nibi ]] && echo 8 || echo 4; }
 
 gpu_request() {
-    local tasks="$1" mem="$2" g="${GPUS_PER_NODE:-4}"
+    local tasks="$1" mem="$2" g="${GPUS_PER_NODE:-$(default_gpus_per_node)}"
     if [[ "$CC_CLUSTER" == trillium ]]; then
         GPU_OPTS=( --gpus-per-node="$(( tasks == 1 ? 1 : 4 ))" )
     else

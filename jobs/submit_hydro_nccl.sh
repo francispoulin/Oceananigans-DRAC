@@ -14,13 +14,13 @@
 set -eo pipefail
 : "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
 cd "$OCEANANIGANS_DRAC_ROOT"
-G="${GPUS_PER_NODE:-4}"
+source jobs/gpu_request.sh
+G="${GPUS_PER_NODE:-$(default_gpus_per_node)}"
 MAXNODES="${MAXNODES:-4}"
 SIZE="${SIZE:-1440x720x200}"
 export BENCH_DIR="${BENCH_DIR:-$SCRATCH/software/Oceananigans.jl/benchmarking}"
 [[ -f "$BENCH_DIR/run_benchmarks.jl" ]] || { echo "no suite in $BENCH_DIR: run setup/setup_benchmark_suite.sh"; exit 1; }
 grep -q -- '"--comm"' "$BENCH_DIR/run_benchmarks.jl" || { echo "suite in $BENCH_DIR has no --comm option: run setup/setup_benchmark_suite.sh"; exit 1; }
-source jobs/gpu_request.sh
 
 submit() {   # name nodes tasks_per_node comm
     gpu_request "$3" 64G

@@ -17,12 +17,12 @@
 set -eo pipefail
 : "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
 cd "$OCEANANIGANS_DRAC_ROOT"
-G="${GPUS_PER_NODE:-4}"
+source jobs/gpu_request.sh
+G="${GPUS_PER_NODE:-$(default_gpus_per_node)}"
 MAXNODES="${MAXNODES:-2}"
 SIZE="${SIZE:-1024x1024x1024}"
 FLOAT="${FLOAT:-Float32}"
 SOLVER="${SOLVER:-FourierTridiagonal}"
-source jobs/gpu_request.sh
 
 submit() {   # name nodes tasks_per_node comm
     gpu_request "$3" 128G
