@@ -4,8 +4,10 @@
 # Ring exchange: rank r sends a GPU array filled with r to rank r+1 (mod n). Works for any
 # number of ranks, including one (a rank then sends to itself).
 #
-# Every rank reports CuDevice(0): with one GPU per task, each rank sees only its own GPU,
-# numbered 0. The UUIDs show whether they are really different GPUs.
+# Each rank picks a GPU by its rank on the node, as Oceananigans' Distributed(GPU()) does: with
+# --gpus-per-node every rank sees all of the node's GPUs (needed for fast GPU-to-GPU MPI and for
+# NCCL, see jobs/gpu_request.sh). With only one visible GPU (--gpus-per-task) every rank uses
+# device 0, its own. The UUIDs show whether the ranks are really on different GPUs.
 
 using CUDA, NCDatasets
 include(joinpath(@__DIR__, "..", "src", "drac_mpi.jl"))
@@ -14,9 +16,12 @@ drac_mpi_init()
 comm = MPI.COMM_WORLD
 rank, n = MPI.Comm_rank(comm), MPI.Comm_size(comm)
 
+node_comm = MPI.Comm_split_type(comm, MPI.COMM_TYPE_SHARED, rank)
+local_rank = MPI.Comm_rank(node_comm)
+CUDA.device!(local_rank % length(CUDA.devices()))
 dev = CUDA.device()
 uuid = string(CUDA.uuid(dev))
-println("rank $rank on $(gethostname()): $(CUDA.name(dev)), UUID $uuid")
+println("rank $rank (local $local_rank) on $(gethostname()): $dev of $(length(CUDA.devices())) visible, $(CUDA.name(dev)), UUID $uuid")
 
 dest, source = mod(rank + 1, n), mod(rank - 1, n)
 send = CUDA.fill(Float64(rank), 10^6)

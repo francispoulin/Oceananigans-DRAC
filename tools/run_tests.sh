@@ -63,7 +63,10 @@ if [[ $slurm -eq 1 && $in_job -eq 0 && -z "$SLURM_JOB_ID" ]]; then
         (( maxgpu > 4 )) && { echo "Trillium: at most 4 GPUs (one node) for the tests"; exit 1; }
         res=(--gpus-per-node="$ng" --ntasks-per-node="$ng" --time=0:30:00)
     else
-        res=(--ntasks-per-node="$maxgpu" --gpus-per-task=h100:1 --cpus-per-task=4 --mem=128G --time=1:00:00)
+        # All of the node's requested GPUs visible to every rank (jobs/gpu_request.sh), as in production.
+        source "$ROOT/jobs/gpu_request.sh"
+        gpu_request "$maxgpu" 128G
+        res=(--ntasks-per-node="$maxgpu" "${GPU_OPTS[@]}" --cpus-per-task=4 --time=1:00:00)
     fi
     sbatch --job-name=tests --nodes=1 "${res[@]}" --output="$OUT/logs/tests_%j.out" \
            --export=ALL "$ROOT/tools/run_tests.sh" --in-job --gpus "$gpus"
