@@ -1,4 +1,4 @@
-# Using the Digital Research Alliance of Canada's GPU clusters (Nibi, Fir, Rorqual)
+# Using the Digital Research Alliance of Canada's GPU clusters (Nibi, Fir, Rorqual, Trillium)
 
 ## Overview
 
@@ -151,17 +151,33 @@ grid = 8×8×8 RectilinearGrid{Float64, Periodic, Periodic, Bounded} on CUDAGPU 
 
 ## 6. Multi-GPU checks
 
-`jobs/checks.sh` runs four checks on any number of GPUs, one MPI rank per GPU:
+`jobs/checks.sh` runs four checks on any number of GPUs, one MPI rank per GPU. Submit it with
+`jobs/submit_gpu.sh`, which picks the Slurm options for the cluster you are on:
 
 ```bash
-sbatch --nodes=1 --ntasks-per-node=2 jobs/checks.sh            # 2 GPUs
-sbatch --nodes=1 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # a full node
-sbatch --nodes=2 --ntasks-per-node=8 --mem=0 jobs/checks.sh    # two nodes
+bash jobs/submit_gpu.sh jobs/checks.sh 2      # 2 GPUs
+bash jobs/submit_gpu.sh jobs/checks.sh 8      # a full Nibi node (2 nodes on Fir and Rorqual)
+bash jobs/submit_gpu.sh jobs/checks.sh 16     # two Nibi nodes
 ```
 
-These are for Nibi (8 GPUs per node). On Fir and Rorqual use `--ntasks-per-node=4`: a full
-node is `--nodes=1 --ntasks-per-node=4 --mem=0`, two nodes are `--nodes=2`. Use `--mem=0`
-(all of a node's memory) whenever you use all of a node's GPUs.
+It prints the `sbatch` command it runs (`DRYRUN=1` prints it without submitting), and any options
+after the number of GPUs go to `sbatch` unchanged (`--time=...`, `--export=...`). It works for the
+other GPU job scripts too (`jobs/benchmark*.sh`, or a copy of `checks.sh` with your own script).
+
+**Without the wrapper.** Plain `sbatch` works the same way if you give the GPU options yourself:
+
+| GPUs | Nibi (8 per node) | Fir, Rorqual (4 per node) |
+| --- | --- | --- |
+| 2 | `--nodes=1 --ntasks-per-node=2 --gpus-per-node=h100:2 --mem=64G` | same |
+| 4 | `--nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=64G` | `--nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=0` |
+| 8 | `--nodes=1 --ntasks-per-node=8 --gpus-per-node=h100:8 --mem=0` | `--nodes=2 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=0` |
+| 16 | `--nodes=2 --ntasks-per-node=8 --gpus-per-node=h100:8 --mem=0` | `--nodes=4 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=0` |
+
+for example `sbatch --nodes=1 --ntasks-per-node=2 --gpus-per-node=h100:2 --mem=64G jobs/checks.sh`.
+Three rules: `--gpus-per-node` equals `--ntasks-per-node`; **never `--gpus-per-task`** (see
+"GPU-to-GPU communication" in step 7); `--mem=0` (all of a node's memory) only when the job uses
+all of a node's GPUs, otherwise a size such as `--mem=64G` (Nibi refuses `--mem=0` on part of a
+node). Trillium has its own rules (section 11); run the checks there with `tools/run_tests.sh`.
 
 | Check | What it tests | Pass means |
 | --- | --- | --- |
@@ -193,9 +209,9 @@ PASS: NetCDF and JLD2 output
 
 Two things that may look wrong but aren't:
 
-- **Every rank reports `CuDevice(0)`.** With `--gpus-per-task=h100:1`, each rank sees only
-  its own GPU, numbered 0. The GPU UUIDs, printed at the start of the job and by
-  `cuda_aware_mpi`, show the ranks are on different GPUs.
+- **Every rank lists all of the node's GPUs** at the start of the job. That is intended: each
+  rank sees every GPU and uses the one matching its rank on the node (`cuda_aware_mpi` prints
+  `CuDevice(<local rank>)` and the UUIDs, which must all differ).
 - **`single_mpi` lists three files from the Julia depot:** `libmpi_mpifh.so`,
   `libmpi_usempi_ignore_tkr.so` and `libmpi_usempif08.so`. These are OpenMPI's Fortran
   interface libraries, loaded by `OpenMPI_jll`; they pass calls on to the system `libmpi`
@@ -283,6 +299,35 @@ sbatch $OCEANANIGANS_DRAC_ROOT/jobs/viz.sh scripts/make_movies.jl
 
 or interactively with `julia --project=$OCEANANIGANS_DRAC_ROOT/viz scripts/make_movies.jl`.
 CairoMakie needs no display, and `record` writes mp4 files with its own FFMPEG.
+
+### GPU-to-GPU communication: two settings
+
+Multi-GPU runs are only fast if the GPUs exchange data directly (over NVLink within a node), not
+through the host. Two settings decide this; `jobs/gpu_request.sh` and `env/drac.sh` set both:
+
+1. **`--gpus-per-node`, never `--gpus-per-task`.** With `--gpus-per-task`, Slurm fences each rank
+   off so it sees only its own GPU. CUDA-aware MPI then cannot reach the other GPUs' memory and
+   copies everything through the host, and NCCL fails (`ncclUnhandledCudaError`). With
+   `--gpus-per-node=h100:<ranks per node>`, every rank sees all of its node's GPUs, and
+   Oceananigans' `Distributed(GPU())` gives each rank its own one (by its rank on the node). In your
+   own code, do the same before allocating anything on the GPU:
+
+   ```julia
+   local_rank = MPI.Comm_rank(MPI.Comm_split_type(MPI.COMM_WORLD, MPI.COMM_TYPE_SHARED, 0))
+   CUDA.device!(local_rank % length(CUDA.devices()))
+   ```
+
+2. **CUDA.jl's memory pool off: `JULIA_CUDA_MEMORY_POOL=none`.** Memory from the pool cannot be
+   shared between processes (CUDA IPC), so MPI (UCX) silently stages GPU buffers through the host
+   instead. `env/drac.sh` sets it (and `tools/run_local.sh` on pelee/rondeau). If you start Julia
+   without sourcing `env/drac.sh`, set it yourself.
+
+The answers are the same either way, so nothing looks wrong except the speed. On Nibi (Oct 2026),
+`MPI_Alltoall` between 2 H100s went from 15 to 294 GB/s per rank with both settings, and the
+pressure solve of a 1024³ nonhydrostatic model became 3 times faster on 2 GPUs (445 → 144 ms)
+and 9 times faster on 4 (700 → 78 ms). Across nodes the network sets the limit: keep the nonhydrostatic pressure solve (all-to-all transposes)
+within one node where possible (8 GPUs on Nibi), and use NCCL when it must cross nodes; the
+hydrostatic model exchanges only halos and scales well across nodes.
 
 ## 8. Scaling on Nibi
 

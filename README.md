@@ -81,7 +81,7 @@ Oceananigans Discussions (https://github.com/CliMA/Oceananigans.jl/discussions/6
 | `tools/run_local.sh` | Background runs on free GPUs, with a log, on machines without Slurm |
 | `src/drac_mpi.jl` | `drac_mpi_init()`: starts MPI safely when NetCDF is loaded |
 | `examples/` | A first Oceananigans script, on CPU or GPU |
-| `jobs/` | Slurm scripts: hello on CPU and GPU, multi-GPU checks, benchmarks, plotting (`viz.sh`) |
+| `jobs/` | Slurm scripts: hello on CPU and GPU, multi-GPU checks, benchmarks, plotting (`viz.sh`); `submit_gpu.sh` submits any of them on N GPUs |
 | `checks/` | Single MPI, CUDA-aware MPI, distributed vs single-GPU, NetCDF/JLD2 output |
 | `benchmarks/` | Nonhydrostatic box benchmark, 1 to many GPUs (`benchmarks/README.md`) |
 | `tests/` | Platform tests (1 and 4 GPUs by default); run all with `tools/run_tests.sh` (`tests/README.md`) |

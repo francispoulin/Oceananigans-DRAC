@@ -1,6 +1,6 @@
 #!/bin/bash
-# Set up the Oceananigans benchmark suite (benchmarking/ in an Oceananigans checkout) on a cluster
-# other than Nibi, matching the version used for the Nibi scaling results, plus NCCL for
+# Set up the Oceananigans benchmark suite (benchmarking/ in an Oceananigans checkout) on any
+# Alliance cluster (Nibi included), matching the version used for the Nibi scaling results, plus NCCL for
 # MPI-vs-NCCL comparisons. Once per cluster, on a LOGIN node (needs internet), after ocean_setup:
 #
 #     bash setup/setup_benchmark_suite.sh          # checkout in $SCRATCH/software/Oceananigans.jl
@@ -10,7 +10,8 @@
 # setup/patches/oceananigans_benchmarking_8743c40d0.patch (GPU memory for distributed runs, as on
 # Nibi; OPAL_PREFIX from OCEAN_MPI_ROOT; new --comm MPI|NCCL option); configure_mpi.sh on
 # benchmarking/; add NCCL.jl to it, with the GPU package versions of envs/nccl (so run
-# setup/setup_nccl_env.sh first). Not for Nibi, whose checkout already has its own local edits.
+# setup/setup_nccl_env.sh first). (Nibi's original hand-edited checkout of Oct 2 is kept as
+# $SCRATCH/software/Oceananigans.jl.nibi-2026-10-02; this script replaced it on Oct 15.)
 # Then: jobs/benchmark.sh (COMM=NCCL for NCCL) or jobs/submit_hydro_nccl.sh.
 
 set -eo pipefail
