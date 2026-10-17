@@ -1,8 +1,8 @@
 #!/bin/bash
 # Submit the hydrostatic MPI-vs-NCCL comparison (Oceananigans benchmark suite, earth_ocean on a
-# 1440x720x200 lat-lon grid, as in results/nibi_scaling.md) on a cluster with 4 GPUs per node
-# (Fir, Rorqual): strong scaling on 1 GPU, then 4, 8 and 16 GPUs (1, 2, 4 nodes), with MPI and
-# with NCCL. From the repository root, on a login node, after setup/setup_benchmark_suite.sh:
+# 1440x720x200 lat-lon grid, as in results/nibi_scaling.md) on any cluster: strong scaling on
+# 1 GPU, then 1, 2 and 4 full nodes (GPUs per node from jobs/gpu_request.sh: 8 on Nibi, 4
+# elsewhere), with MPI and with NCCL. From the repository root, on a login node, after setup/setup_benchmark_suite.sh:
 #
 #     DRYRUN=1 bash jobs/submit_hydro_nccl.sh     # show the sbatch commands
 #     bash jobs/submit_hydro_nccl.sh              # 7 jobs; MAXNODES=2 stops at 8 GPUs

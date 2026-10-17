@@ -25,6 +25,9 @@ fi
 echo "== Submit scripts: Slurm options per cluster"
 bash tests/ci/test_submit_scripts.sh || status=1
 
+echo "== Cluster facts: docs tables vs jobs/gpu_request.sh, no --gpus-per-task"
+python3 tests/ci/check_cluster_facts.py || status=1
+
 echo "== Links in the docs"
 python3 tests/ci/check_links.py || status=1
 

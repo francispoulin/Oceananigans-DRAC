@@ -1,7 +1,7 @@
 #!/bin/bash
-# Submit the MPI-vs-NCCL scaling set for the pressure solver (Fourier-tridiagonal) on a cluster with
-# 4 GPUs per node (Fir, Rorqual): 1 GPU, then 2 and 4 GPUs on one node, 8 GPUs on 2 nodes and
-# 16 GPUs on 4 nodes, each strong (512x512x256 total) and weak (512x512x256 per GPU), with MPI
+# Submit the MPI-vs-NCCL scaling set for the pressure solver (Fourier-tridiagonal) on any cluster:
+# 1 GPU, 2 GPUs, then 1, 2 and 4 full nodes (GPUs per node from jobs/gpu_request.sh: 8 on Nibi,
+# 4 elsewhere), each strong (512x512x256 total) and weak (512x512x256 per GPU), with MPI
 # and with NCCL. From the repository root, on a login node, after ocean_setup and
 # bash setup/setup_nccl_env.sh (once per cluster):
 #

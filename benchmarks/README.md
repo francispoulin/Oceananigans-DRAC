@@ -134,11 +134,11 @@ grep -ah "^RESULT poisson" logs/poisson_FT_*.out
 If the NCCL run fails with one GPU visible per rank, add `--all-visible`. Profile with Nsight Systems
 as for `nonhydrostatic_box.jl` (`--profile=true` records 3 solves), using `--project=envs/nccl`.
 
-### On the Alliance clusters (Fir, Rorqual: 4 GPUs per node)
+### On the Alliance clusters
 
 Once per cluster, on a login node: `bash setup/setup_nccl_env.sh` (makes `envs/nccl`). Then submit
-the whole MPI-vs-NCCL set (1 GPU; 2 and 4 GPUs on one node; 8 GPUs on 2 nodes; 16 on 4; strong
-and weak; 17 jobs) and collect the results when they have run:
+the whole MPI-vs-NCCL set (1 GPU; 2 GPUs; then 1, 2 and 4 full nodes; strong and weak;
+17 jobs) and collect the results when they have run:
 
 ```bash
 cd $OCEAN_HPC_ROOT
@@ -154,7 +154,7 @@ nodes the difference may be larger.
 ### Larger grid: 1024³ in Float32
 
 `jobs/submit_poisson_1024.sh` runs the solver alone on a 1024³ grid in Float32 (fits on one
-H100-80GB, ~38 GiB) on 1, 2, 4 and 8 GPUs with MPI and NCCL (7 jobs; on Nibi set `GPUS_PER_NODE=8`). Motivation: GPU FFT libraries
+H100-80GB, ~38 GiB) on 1, 2, 4 and 8 GPUs with MPI and NCCL (7 jobs; on Nibi all on one node). Motivation: GPU FFT libraries
 scale better on larger grids (Verma et al. 2022, arXiv:2202.12756: 1024³ 2→4 GPUs ~90% vs ~77% at
 512³). On rondeau, 512³ gave the same efficiencies as 512²×256 (1→2: 35%; 1→4: MPI 28%, NCCL 39%),
 so our costs grow with the data; this checks it on H100 nodes.

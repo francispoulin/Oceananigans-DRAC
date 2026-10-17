@@ -67,6 +67,26 @@ out="$(CC_CLUSTER=nibi DRYRUN=1 bash jobs/submit_poisson_1024.sh 2>&1 | grep p10
 [[ "$out" == *--nodes=1* && "$out" == *--mem=0* ]] && ok=1 || ok=0
 report "$ok" "submit_poisson_1024.sh: 8 GPUs on one Nibi node" "$out"
 
+# tools/run_tests.sh: the platform-test job, Slurm options from jobs/gpu_request.sh on every cluster
+rt() {   # cluster gpus must-contain...
+    local cluster="$1" g="$2"; shift 2
+    local out; out="$(CC_CLUSTER="$cluster" DRYRUN=1 bash tools/run_tests.sh --gpus "$g" 2>&1)"; local ok=1 want
+    for want in "$@"; do
+        if [[ "$want" == !* ]]; then [[ "$out" == *"${want#!}"* ]] && ok=0
+        else [[ "$out" == *"$want"* ]] || ok=0; fi
+    done
+    [[ "$out" == *--gpus-per-task* ]] && ok=0
+    report "$ok" "run_tests.sh on $cluster, GPUs \"$g\"" "$out"
+}
+rt nibi "1 4"     --nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=128G
+rt fir "1 4"      --nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=0
+rt rorqual "1 4"  --nodes=1 --ntasks-per-node=4 --gpus-per-node=h100:4 --mem=0
+rt trillium "1 4" --nodes=1 --ntasks-per-node=4 --gpus-per-node=4 --time=0:30:00 '!--mem'
+rt trillium "1"   --nodes=1 --ntasks-per-node=1 --gpus-per-node=1 '!--mem'
+out="$(CC_CLUSTER=fir DRYRUN=1 bash tools/run_tests.sh --gpus "1 8" 2>&1)" && ok=0 || ok=1
+[[ "$out" == *"at most 4 GPUs"* ]] || ok=0
+report "$ok" "run_tests.sh on fir refuses 8 GPUs (one node only)" "$out"
+
 rm -rf "$OCEAN_JOB_DIR"
 echo "$fails failure(s)"
 exit $(( fails > 0 ))
