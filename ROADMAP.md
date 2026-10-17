@@ -1,0 +1,88 @@
+# Roadmap
+
+What this repository is for: one tested environment for Oceananigans on every machine we use
+(Alliance clusters with Slurm; pelee/rondeau without), plus the tools around it: setup, MPI
+configuration, plotting environment, launcher, checks, platform tests and benchmarks. Simulation
+repositories depend on it by convention, not as a Julia package, and dependencies point one way:
+this repository never depends on a simulation repository.
+
+Boxes are ticked in the pull request that does the work. Last updated: October 17, 2026.
+
+## Phase 1: finish and stabilize
+
+- [x] Platform tests (`tools/run_tests.sh`) pass on Nibi, Fir, Rorqual, Trillium and rondeau (Oct 13)
+- [x] Trillium supported: output on `$SCRATCH`, writable compiled cache in jobs, whole-GPU requests
+- [x] Two settings for fast GPU-to-GPU communication: `--gpus-per-node` (never `--gpus-per-task`)
+      and the CUDA.jl memory pool off; documented in `docs/drac.md`, step 7
+- [x] `jobs/submit_gpu.sh`: any GPU job on N GPUs with the right Slurm options for the cluster
+- [x] Checks and platform tests run with every rank seeing its node's GPUs (check verified on
+      Rorqual, Oct 16)
+- [x] How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md)
+- [ ] Platform tests rerun with the Oct 15–16 settings
+  - [x] rondeau (Oct 16: 21 passed, same answers as Oct 13)
+  - [ ] Nibi
+  - [ ] Fir
+  - [ ] Rorqual
+  - [ ] Trillium
+- [ ] Test summaries committed; `docs/drac.md` section 10 ("Tested with") updated
+- [ ] Every clone clean and set to `pull.ff only`: Nibi, Fir, Rorqual, Trillium, pelee/rondeau
+- [ ] `main` protected on GitHub (pull requests only)
+- [ ] Automatic checks on every pull request (`tests/ci/`): shell syntax, `shellcheck`, submit
+      scripts' Slurm options for each cluster, links in the docs
+- [ ] Each cluster fact in one place (memory per node, Trillium's rules), used by scripts and
+      quoted by the docs
+- [ ] Tag `v2026.10` once all of the above pass
+
+## Phase 2: complete the switch of pelee and rondeau to this setup
+
+- [ ] `setup/configure_mpi.sh` on the simulation project folders; one run each with the new setup,
+      compared with the old one
+- [ ] Remove the old module-based setup (login files, the old `~/.julia` depot; move downloaded
+      ocean data out of it first)
+- [ ] `OCEAN_DATA_DIR` and `OCEAN_RESULTS_ROOT` in every env file and in the contract
+      (`env/README.md`), including how they relate to Trillium's `OCEAN_JOB_DIR`
+
+## Phase 3: serve the simulation repositories (platform side only)
+
+- [ ] Contract for a simulation repository: its own `Project.toml` without Makie; plotting in `viz/`
+- [ ] Slurm job template that sources `env/ocean_setup.sh` (with the Trillium variant);
+      `tools/run_local.sh` documented for pelee/rondeau
+- [x] Platform tests that simulation repositories rely on (their own regression tests live in
+      those repositories)
+- [ ] Nonhydrostatic benchmark repeated with real simulation configurations
+
+## Phase 4: a workflow for updating libraries
+
+Oceananigans, Julia, the GPU stack (CUDA.jl, GPUCompiler, LLVM), MPI.jl/OpenMPI_jll, NCCL, cluster
+modules and the plotting stack all change independently.
+
+- [ ] One upgrade at a time, in a separate environment (`envs/candidate`), never in the main one;
+      read the release notes first
+- [ ] Test on rondeau first (platform tests, benchmarks, one short run of each simulation
+      repository), then on one cluster; compare with the stored summaries
+- [ ] Adopt in one pull request listing the versions, then setup and tests on every machine and a
+      new release tag; or write down why not and what to wait for
+- [ ] Record the versions of every environment, including `envs/nccl` (not under version control)
+- [ ] First use: Oceananigans 0.114, Julia 1.11
+
+## Phase 5: scaling numbers
+
+- [x] Pressure solve (1024³, Float32), MPI vs NCCL, 1–8 GPUs: Trillium and Rorqual; Nibi 1–4 GPUs
+- [ ] Nibi pressure solve on 8 GPUs (one node)
+- [ ] Hydrostatic strong scaling with both settings: Nibi 1–32 GPUs (MPI; NCCL at 8–32),
+      Trillium and Rorqual up to 16 GPUs
+- [ ] Hydrostatic weak scaling on Nibi with both settings (4, 16, 64 GPUs; 64 also with a 2-D split)
+- [ ] Results name their code: repository commit and Oceananigans commit in every table
+- [ ] Results in `results/` and `docs/drac.md` section 8; update to the Discussion posts
+
+## Later
+
+- [ ] Rename the repository (it now covers more than the Alliance clusters)
+- [ ] Point the Waterloo Fluids Computing Handbook's Oceananigans pages to this workflow
+- [ ] Shared depot for the group on pelee/rondeau, once several people use it
+- [ ] GPU tests on every pull request (a self-hosted runner on pelee)
+- [ ] Download script for the ocean data sets
+- [ ] Contribute multi-GPU nonhydrostatic cases to the Oceananigans benchmark suite
+- [ ] MPI between nodes with GPUDirect RDMA
+- [ ] Faster local work in the distributed pressure solve (the 1 → 2 GPU cost)
+- [ ] A short guide for new users running the MPI vs NCCL comparisons

@@ -4,6 +4,9 @@ Scripts and instructions for running [Oceananigans.jl](https://github.com/CliMA/
 on GPUs, including multi-GPU runs with CUDA-aware MPI: on the clusters of the Digital Research
 Alliance of Canada (DRAC), and on the Waterloo fluids group's own servers.
 
+**Status:** platform tests pass on every machine below; current work and plans are in
+[ROADMAP.md](ROADMAP.md). How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Machines
 
 | Machine | GPUs per node | Scheduler | Environment file | Guide | Platform tests |
@@ -114,10 +117,6 @@ On pelee and rondeau: `bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 0 --vi
 
 ## Contributing
 
-Corrections and other clusters are welcome: open an issue or a pull request. A new machine
-needs an `env/<machine>.sh` providing the variables in [env/README.md](env/README.md), and a case
-in `env/ocean_setup.sh`.
-
-## License
-
-MIT; see [LICENSE](LICENSE).
+Corrections and other clusters are welcome: open an issue or a pull request. The workflow (branches,
+pull requests, testing, never editing the clones on the clusters) is in
+[CONTRIBUTING.md](CONTRIBUTING.md); plans are in [ROADMAP.md](ROADMAP.md).
