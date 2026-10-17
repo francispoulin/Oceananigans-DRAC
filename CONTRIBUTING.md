@@ -9,7 +9,8 @@ can always be traced to the code that produced it. It applies to everyone, maint
 1. **Every change goes through a branch and a pull request.** Nothing is committed directly to
    `main` (GitHub enforces this).
 2. **Clones on the clusters only pull.** Never edit files in a cluster clone. To try a change there,
-   check out its branch, run, and switch back (see "Testing a branch" below).
+   check out its branch, run, and switch back (see "Testing a branch" below). Experiments that are not meant to be committed go in `local/`
+   (ignored by git), not among the tracked files.
 3. **Clones refuse to merge on pull.** Set once on every machine:
    `git config --global pull.ff only`. A clone that has drifted then stops with an error instead of
    quietly creating a merge commit, so the drift is noticed and fixed.

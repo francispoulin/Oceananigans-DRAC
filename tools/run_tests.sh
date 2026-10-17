@@ -155,7 +155,7 @@ if [[ $status -eq 0 ]]; then record viz CPU PASS "$secs" "$detail" "$log"; else 
 {
     echo "# Platform tests on $machine, $(date '+%F %T')"
     echo
-    echo "oceananigans-hpc $(git -C "$ROOT" log -1 --format='%h %s'). GPUs: $gpus."
+    echo "oceananigans-hpc $(git -C "$ROOT" describe --tags --always 2>/dev/null) ($(git -C "$ROOT" log -1 --format='%h %s')). GPUs: $gpus."
     echo "**$npass passed, $nfail failed, $nskip skipped or warnings.**"
     echo
     echo "| Test | GPUs | Result | Seconds | Detail | Log |"

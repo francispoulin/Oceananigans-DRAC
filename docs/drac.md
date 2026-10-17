@@ -397,22 +397,29 @@ Reduce `DT` at higher resolution to stay stable (we used 60, 30, 15 and 7.5 s fo
      
 ## 10. Tested with
 
-| Cluster | Date | Julia | Oceananigans | CUDA.jl | MPI.jl | OpenMPI_jll | Modules |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Nibi | 2026-10-02 | 1.10.10 | 0.113.5 | 6.4.1 | 0.20.27 | 4.1.9 | StdEnv/2023, gcc/12.3, openmpi/4.1.5, cuda/12.6, julia/1.10.10 |
-| Fir | 2026-10-04 | 1.10.10 | 0.113.5 | 6.4.1 | 0.20.27 | 4.1.10 | same as above |
-| Rorqual | 2026-10-04 | 1.10.10 | 0.113.5 | 6.4.1 | 0.20.27 | 4.1.10 | same as above |
+**Version v0.1.0** (October 2026): the platform tests (`tools/run_tests.sh`, 21 tests on 1 and 4
+GPUs) pass on every machine, with the GPU settings of step 7. Summaries, with the exact package
+versions, are in [results/tests/](../results/tests/).
 
-Nibi: fresh depot, setup, both hello jobs, and all checks on 2 GPUs and on 16 GPUs across
-2 nodes (before the move to OpenMPI_jll 4.1.10; to be rechecked).
+| Machine | Date | Commit | Result | GPU | Julia |
+| --- | --- | --- | --- | --- | --- |
+| Fir | 2026-10-17 | 58b382e | 21 passed | H100 80GB | 1.10.10 |
+| Rorqual | 2026-10-16 | 58b382e | 21 passed | H100 80GB | 1.10.10 |
+| Trillium | 2026-10-17 | 58b382e | 21 passed | H100 80GB | 1.10.10 |
+| rondeau | 2026-10-17 | a582cbe | 21 passed | A100 40GB | 1.10.8 |
+| Nibi | pending | | | H100 80GB | 1.10.10 |
 
-Fir: setup, both hello jobs, and all checks on 2 GPUs, a full node (4 GPUs) and 8 GPUs across 2 nodes (InfiniBand); repeated from a fresh clone with the depot in project space.
+Packages everywhere: Oceananigans 0.113.5, CUDA.jl 6.4.1, MPI.jl 0.20.27, OpenMPI_jll 4.1.10,
+NCDatasets 0.14.15, JLD2 0.6.7. Alliance modules: StdEnv/2023, gcc/12.3, openmpi/4.1.5, cuda/12.6,
+julia/1.10.10. Between 58b382e and a582cbe the scripts changed only by the renaming of the
+repository and of its root variable (`OCEAN_HPC_ROOT`), and rondeau gives the same results at both.
+The release adds these summaries, this table, the version number and one line in
+`tools/run_tests.sh` (summaries now start with the version, from `git describe`).
 
-Rorqual: setup, both hello jobs, and all checks on a full node (4 GPUs) and on 8 GPUs across
-2 nodes (InfiniBand); `checks/no_opal_reset.jl` passes without the `OPAL_PREFIX` reset;
-repeated from a fresh clone with the depot in project space.
+What the tests show on every machine: 4 GPUs against 1 GPU agree bitwise for the hydrostatic model
+and to 5e-14 for the nonhydrostatic pressure solvers; checkpoint restarts are bitwise; every rank
+sees all of its node's GPUs and uses its own (`cuda_aware`, "4 visible per rank").
 
-   
 ## 11. Trillium
 
 Trillium (run by SciNet) uses the same software stack, so `env/drac.sh` works unchanged
