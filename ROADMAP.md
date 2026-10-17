@@ -82,7 +82,8 @@ modules and the plotting stack all change independently.
       Trillium and Rorqual up to 16 GPUs
 - [ ] Hydrostatic weak scaling on Nibi with both settings (4, 16, 64 GPUs; 64 also with a 2-D split)
 - [ ] Results name their code: repository commit and Oceananigans commit in every table
-- [ ] Results in `results/` and `docs/drac.md` section 8; update to the Discussion posts
+- [ ] Results in `results/` (drafts: `hydrostatic_scaling.md`, `pressure_solver_1024.md`, filled as
+      the queued runs finish) and `docs/drac.md` section 8; update to the Discussion posts
 
 ## Later
 

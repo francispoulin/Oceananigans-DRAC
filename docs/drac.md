@@ -334,6 +334,12 @@ hydrostatic model exchanges only halos and scales well across nodes.
 
 ## 8. Scaling on Nibi
 
+*These numbers were measured on Oct 2–5, 2026, before the two settings of step 7. The current
+numbers, on Nibi, Rorqual and Trillium, are in
+[results/hydrostatic_scaling.md](../results/hydrostatic_scaling.md) and, for the nonhydrostatic
+pressure solve, [results/pressure_solver_1024.md](../results/pressure_solver_1024.md); this section
+will be updated from them.*
+
 The Oceananigans benchmark suite, case `earth_ocean` on a latitude–longitude grid with 200
 levels, Float64, WENO advection, CATKE, 2 tracers. Median of 5 windows of 100 steps; one
 MPI rank per GPU; grid split in x. Throughput is for the whole grid.
