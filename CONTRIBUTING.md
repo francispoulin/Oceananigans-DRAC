@@ -13,11 +13,14 @@ can always be traced to the code that produced it. It applies to everyone, maint
 3. **Clones refuse to merge on pull.** Set once on every machine:
    `git config --global pull.ff only`. A clone that has drifted then stops with an error instead of
    quietly creating a merge commit, so the drift is noticed and fixed.
-4. **One logical change per pull request.** A behaviour change and its documentation can go
+4. **Branch names start with the author's initials:** `<initials>/<what-it-does>`, for example
+   `fjp/weak-scaling-docs` (Francis) or `claude/submit-gpu-memory` (Claude). It shows at a glance
+   whose branch it is, and keeps everyone's branches apart.
+5. **One logical change per pull request.** A behaviour change and its documentation can go
    together; unrelated fixes go in separate pull requests.
-5. **Test before merging, on the machine the change affects** (table below).
-6. **Pull everywhere after merging**, so every machine runs the same code.
-7. **The repository is public.** No personal names other than the authors, no account or
+6. **Test before merging, on the machine the change affects** (table below).
+7. **Pull everywhere after merging**, so every machine runs the same code.
+8. **The repository is public.** No personal names other than the authors, no account or
    allocation names (use `def-yourpi` in examples), no credentials or tokens.
 
 ## Where to edit and where to test
@@ -39,14 +42,14 @@ committed on a branch and pushed before it runs anywhere else.
 cd "$OCEANANIGANS_DRAC_ROOT"
 git switch main && git pull
 
-# 2. Make a branch named after the change, edit, commit
-git switch -c submit-gpu-memory
+# 2. Make a branch: your initials, then what it does; edit, commit
+git switch -c fjp/submit-gpu-memory
 # ... edit ...
 git add -p                       # review each change as you stage it
 git commit                       # message: see below
 
 # 3. Push and open a pull request on GitHub
-git push -u origin submit-gpu-memory
+git push -u origin fjp/submit-gpu-memory
 ```
 
 **Testing a branch on another machine** (a cluster, or rondeau):
@@ -54,7 +57,7 @@ git push -u origin submit-gpu-memory
 ```bash
 cd "$OCEANANIGANS_DRAC_ROOT"
 git fetch
-git switch submit-gpu-memory     # the branch, read-only here: never commit on a cluster
+git switch fjp/submit-gpu-memory # the branch, read-only here: never commit on a cluster
 # ... run the test, look at the log ...
 git switch main                  # back to main afterwards
 ```
@@ -79,10 +82,10 @@ Test summaries (`results/tests/`) and benchmark results are written on the machi
 They are the one kind of file committed from a cluster or server, and only on a branch:
 
 ```bash
-git switch -c results-tests-nibi-2026-10
+git switch -c fjp/results-tests-nibi-2026-10
 git add results/tests/nibi_20261016-2022.md
 git commit -m "Platform test summary: Nibi, Oct 16 (21 passed)"
-git push -u origin results-tests-nibi-2026-10
+git push -u origin fjp/results-tests-nibi-2026-10
 git switch main
 ```
 
