@@ -9,6 +9,9 @@ import re
 import subprocess
 import sys
 
+if sys.argv[1:2] in (["-h"], ["--help"]):
+    sys.exit(print(__doc__))
+
 root = pathlib.Path(__file__).resolve().parents[2]
 files = subprocess.run(["git", "ls-files", "*.md"], cwd=root, capture_output=True,
                        text=True, check=True).stdout.split()

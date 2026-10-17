@@ -19,6 +19,7 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Checks and platform tests run with every rank seeing its node's GPUs (check verified on
       Rorqual, Oct 16)
 - [x] How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md)
+- [x] Every script listed in [docs/scripts.md](docs/scripts.md), with its usage printed by `-h`
 - [ ] Platform tests rerun with the Oct 15–16 settings (all but Nibi done)
   - [x] rondeau (Oct 16: 21 passed, same answers as Oct 13)
   - [ ] Nibi (queued; added in v0.1.1)

@@ -13,6 +13,7 @@
 # Trillium: 2-GPU runs use a whole 4-GPU node (only 1 GPU or whole nodes can be requested there).
 # Expected memory (from 512^3 on rondeau): ~38 GiB on 1 GPU, ~20 GiB per GPU on 2, ~11 on 4.
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -eo pipefail
 OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
 : "${OCEAN_HPC_ROOT:?run ocean_setup first}"

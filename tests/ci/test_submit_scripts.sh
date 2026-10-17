@@ -6,6 +6,7 @@
 # Cluster facts tested: Nibi has 8 GPUs per node, Fir and Rorqual 4, Trillium 4 with only 1 GPU or
 # whole nodes and no --mem; --mem=0 only for a full node; never --gpus-per-task.
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -o pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export OCEAN_HPC_ROOT="$ROOT"

@@ -13,6 +13,7 @@
 # To add a package for plotting:  julia --project=$OCEAN_HPC_ROOT/viz -e 'using Pkg; Pkg.add("X")'
 # and commit viz/Project.toml and viz/Manifest.toml.
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/env/ocean_setup.sh"
 set -eo pipefail          # after loading modules, as module commands can return harmless errors

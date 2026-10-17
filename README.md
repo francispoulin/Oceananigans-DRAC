@@ -8,7 +8,8 @@ A community project, not part of [CliMA](https://github.com/CliMA). Formerly nam
 Oceananigans-DRAC; old links and clones keep working.
 
 **Status:** platform tests pass on every machine below; current work and plans are in
-[ROADMAP.md](ROADMAP.md). How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md).
+[ROADMAP.md](ROADMAP.md). How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md). Every
+script, what it is for and how to run it: [docs/scripts.md](docs/scripts.md) (or any script with `-h`).
 
 ## Machines
 
@@ -92,7 +93,7 @@ Oceananigans Discussions (https://github.com/CliMA/Oceananigans.jl/discussions/6
 | `benchmarks/` | Nonhydrostatic box benchmark, 1 to many GPUs (`benchmarks/README.md`) |
 | `tests/` | Platform tests (1 and 4 GPUs by default); run all with `tools/run_tests.sh` (`tests/README.md`) |
 | `results/` | Scaling and benchmark results; platform test summaries in `results/tests/` |
-| `docs/` | Overview and machine guides (`drac.md`, `fluidsgpu.md`) |
+| `docs/` | Overview, machine guides (`drac.md`, `fluidsgpu.md`) and the list of scripts (`scripts.md`) |
 
 `LocalPreferences.toml` is written by `setup/setup.sh` on each machine and is not under
 version control. `Project.toml` and `Manifest.toml` record the tested package versions.

@@ -83,4 +83,6 @@ def main(paths):
 
 
 if __name__ == "__main__":
+    if not sys.argv[1:] or sys.argv[1] in ("-h", "--help"):
+        sys.exit(print(__doc__))
     main(sys.argv[1:])

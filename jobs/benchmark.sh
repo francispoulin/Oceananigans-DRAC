@@ -11,7 +11,7 @@
 # Settings through environment variables, for example
 #     sbatch --export=ALL,SIZE=2880x1440x200 ... jobs/benchmark.sh
 # COMM=NCCL uses NCCLDistributed (needs a suite set up with setup/setup_benchmark_suite.sh, which
-# adds --comm and NCCL.jl; not available in the Nibi checkout). Default: MPI (option not passed).
+# adds --comm and NCCL.jl; all clusters since Oct 15, 2026). Default: MPI (option not passed).
 #SBATCH --job-name=bench
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=2
@@ -21,6 +21,7 @@
 #SBATCH --time=1:20:00
 #SBATCH --output=%x_%j.out
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 cd "$SLURM_SUBMIT_DIR"
 source env/ocean_setup.sh
 set -eo pipefail          # after loading modules, as module commands can return harmless errors

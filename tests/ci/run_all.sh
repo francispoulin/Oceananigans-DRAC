@@ -6,6 +6,7 @@
 #
 # Uses shellcheck if it is installed (pip install shellcheck-py, or the system package).
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 1
 status=0
@@ -27,6 +28,9 @@ bash tests/ci/test_submit_scripts.sh || status=1
 
 echo "== Cluster facts: docs tables vs jobs/gpu_request.sh, no --gpus-per-task"
 python3 tests/ci/check_cluster_facts.py || status=1
+
+echo "== Every script documented: docs/scripts.md, usage header, -h"
+python3 tests/ci/check_scripts_documented.py || status=1
 
 echo "== Links in the docs"
 python3 tests/ci/check_links.py || status=1

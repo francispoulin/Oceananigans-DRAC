@@ -5,7 +5,7 @@
 #
 # It works out which machine it is on and sources the matching file:
 #
-#     Alliance clusters (Nibi, Fir, Rorqual)  ->  env/drac.sh
+#     Alliance clusters (Nibi, Fir, Rorqual, Trillium)  ->  env/drac.sh
 #     pelee, rondeau (Waterloo fluids group)  ->  env/fluidsgpu.sh
 #
 # A convenient alias for ~/.bashrc (the same line on every machine; only the path differs):

@@ -18,6 +18,7 @@
 #SBATCH --time=3:00:00
 #SBATCH --output=%x_%j.out
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
 
 : "${OCEAN_HPC_ROOT:?run ocean_setup before sbatch, so the job knows where the repository is}"

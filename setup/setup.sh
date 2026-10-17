@@ -10,6 +10,7 @@
 #   4. precompile
 # It writes LocalPreferences.toml (machine-specific, so not under version control).
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 source env/ocean_setup.sh
 

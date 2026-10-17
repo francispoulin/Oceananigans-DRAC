@@ -134,6 +134,12 @@ name before the repository was renamed, is exported until v0.3.0).
 
 Results, test summaries and upgrade notes refer to these versions.
 
+## New scripts
+
+A new script starts with a header comment saying what it does and how to run it, has the `-h`
+line the other scripts have (it prints that header), and is added to
+[docs/scripts.md](docs/scripts.md). The automatic checks fail otherwise.
+
 ## New machines and other contributions
 
 Corrections and other clusters are welcome: open an issue or a pull request. A new machine needs an

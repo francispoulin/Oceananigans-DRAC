@@ -30,6 +30,7 @@
 # Output: results/tests/<machine>_<date-time>.md (commit it: the record of what was tested, with
 # which versions), and one log per step in logs/.
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 set -o pipefail
 OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
 : "${OCEAN_HPC_ROOT:?run ocean_setup first}"
