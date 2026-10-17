@@ -1,0 +1,114 @@
+# How changes are made
+
+This repository runs on several machines (Nibi, Fir, Rorqual, Trillium, pelee/rondeau), each with
+its own clone. The workflow below keeps every clone identical to `main` on GitHub, so that a result
+can always be traced to the code that produced it. It applies to everyone, maintainers included.
+
+## The rules
+
+1. **Every change goes through a branch and a pull request.** Nothing is committed directly to
+   `main` (GitHub enforces this).
+2. **Clones on the clusters only pull.** Never edit files in a cluster clone. To try a change there,
+   check out its branch, run, and switch back (see "Testing a branch" below).
+3. **Clones refuse to merge on pull.** Set once on every machine:
+   `git config --global pull.ff only`. A clone that has drifted then stops with an error instead of
+   quietly creating a merge commit, so the drift is noticed and fixed.
+4. **Branch names start with the author's initials:** `<initials>/<what-it-does>`, for example
+   `fjp/weak-scaling-docs` (Francis) or `claude/submit-gpu-memory` (Claude). It shows at a glance
+   whose branch it is, and keeps everyone's branches apart.
+5. **One logical change per pull request.** A behaviour change and its documentation can go
+   together; unrelated fixes go in separate pull requests.
+6. **Test before merging, on the machine the change affects** (table below).
+7. **Pull everywhere after merging**, so every machine runs the same code.
+8. **The repository is public.** No personal names other than the authors, no account or
+   allocation names (use `def-yourpi` in examples), no credentials or tokens.
+
+## Where to edit and where to test
+
+Edit wherever is convenient (a laptop, or a clone on pelee/rondeau), as long as the change is
+committed on a branch and pushed before it runs anywhere else.
+
+| Kind of change | Test on | How |
+| --- | --- | --- |
+| Shell syntax, Slurm options of submit scripts, docs links | Anywhere (also run automatically on every pull request) | `bash tests/ci/run_all.sh` |
+| Julia code, environment files, 1–4 GPU behaviour | rondeau or pelee (4 GPUs, no queue) | `bash tools/run_tests.sh` or `tools/run_local.sh` |
+| Slurm jobs, more than one node, cluster-specific settings | The cluster concerned | `bash jobs/submit_gpu.sh ...` with the branch checked out |
+| Package or module upgrades | rondeau first, then one cluster | `ROADMAP.md`, Phase 4 |
+
+## Step by step
+
+```bash
+# 1. Start from an up-to-date main
+cd "$OCEANANIGANS_DRAC_ROOT"
+git switch main && git pull
+
+# 2. Make a branch: your initials, then what it does; edit, commit
+git switch -c fjp/submit-gpu-memory
+# ... edit ...
+git add -p                       # review each change as you stage it
+git commit                       # message: see below
+
+# 3. Push and open a pull request on GitHub
+git push -u origin fjp/submit-gpu-memory
+```
+
+**Testing a branch on another machine** (a cluster, or rondeau):
+
+```bash
+cd "$OCEANANIGANS_DRAC_ROOT"
+git fetch
+git switch fjp/submit-gpu-memory # the branch, read-only here: never commit on a cluster
+# ... run the test, look at the log ...
+git switch main                  # back to main afterwards
+```
+
+Jobs read the scripts when they start, so keep the branch checked out until a test job has started
+(or finished, for scripts read again later in the job).
+
+**Merging:** on the pull request page, check the diff and that the automatic checks pass, then
+*Merge*. Delete the branch (GitHub offers a button). Then on every machine:
+
+```bash
+cd "$OCEANANIGANS_DRAC_ROOT" && git switch main && git pull
+```
+
+If `git pull` stops with `Not possible to fast-forward`, the clone has local commits or edits:
+`git status` and `git log origin/main..` show them. Keep them on a branch (`git switch -c ...`) or
+discard them (`git reset --hard origin/main`, after checking they are not needed).
+
+## Results produced on a machine
+
+Test summaries (`results/tests/`) and benchmark results are written on the machine that ran them.
+They are the one kind of file committed from a cluster or server, and only on a branch:
+
+```bash
+git switch -c fjp/results-tests-nibi-2026-10
+git add results/tests/nibi_20261016-2022.md
+git commit -m "Platform test summary: Nibi, Oct 16 (21 passed)"
+git push -u origin fjp/results-tests-nibi-2026-10
+git switch main
+```
+
+Every summary records the commit it was run with, so a result always points to its code.
+
+## Commit messages
+
+A first line under about 70 characters naming what changed, then a blank line and the reason:
+
+```
+gpu_request.sh: GPUs per node follow the cluster (8 on Nibi)
+
+GPUS_PER_NODE defaulted to 4 everywhere, so on Nibi a 4-GPU job asked for
+--mem=0 on half a node and sbatch refused it.
+```
+
+## Releases
+
+When the platform tests pass on every machine, the commit is tagged (`v2026.10`, ...) and listed in
+`docs/drac.md`, section 10 ("Tested with"). Results and upgrades refer to these tags.
+
+## New machines and other contributions
+
+Corrections and other clusters are welcome: open an issue or a pull request. A new machine needs an
+`env/<machine>.sh` providing the variables in [env/README.md](env/README.md), and a case in
+`env/ocean_setup.sh`.
