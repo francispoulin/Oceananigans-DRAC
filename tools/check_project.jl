@@ -1,5 +1,17 @@
-# Checks one Julia project folder for tools/check_env.sh. Uses only the standard library and
-# loads no packages, so it is quick and safe on a login node. Exit code = number of warnings.
+# Checks one Julia project folder; tools/check_env.sh runs it for you (use that instead):
+#
+#     julia --startup-file=no tools/check_project.jl /path/to/project
+#
+# Uses only the standard library and loads no packages, so it is quick and safe on a login node.
+# Exit code = number of warnings.
+
+if any(in(("-h", "--help")), ARGS)      # -h: print the comments above and stop
+    for line in eachline(@__FILE__)
+        startswith(line, "#") || break
+        println(replace(line, r"^# ?" => ""))
+    end
+    exit(0)
+end
 
 using TOML
 

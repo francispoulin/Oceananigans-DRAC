@@ -9,6 +9,7 @@
 # project, then does steps 2 and 3 of setup/setup.sh there. It writes LocalPreferences.toml in
 # that folder (machine-specific: do not commit it).
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 DRAC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 if [[ -z "$1" || ! -f "$1/Project.toml" ]]; then
     echo "usage: bash configure_mpi.sh <folder containing Project.toml>"; exit 1

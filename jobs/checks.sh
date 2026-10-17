@@ -20,6 +20,7 @@
 #SBATCH --time=0:30:00
 #SBATCH --output=%x_%j.out
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 cd "$SLURM_SUBMIT_DIR"
 source env/ocean_setup.sh
 set -eo pipefail          # after loading modules, as module commands can return harmless errors

@@ -1,6 +1,9 @@
 #!/bin/bash
 # Environment for Oceananigans on the Waterloo fluids group's GPU servers, pelee and rondeau
-# (4x A100 each, shared drive, no Slurm). Source env/ocean_setup.sh, which sources this file.
+# (4x A100 each, shared drive, no Slurm). Don't run or source it directly; source
+# env/ocean_setup.sh, which sources this file on pelee and rondeau:
+#
+#     source env/ocean_setup.sh
 #
 # Not everyone has access to these machines. The file is also an example for any server
 # without Slurm and with locally built modules: change the block marked MACHINE-SPECIFIC.

@@ -7,6 +7,7 @@
 #
 # Handy alias:  alias check_env='bash $OCEAN_HPC_ROOT/tools/check_env.sh'
 
+[[ "${1:-}" == -h || "${1:-}" == --help ]] && { sed -n '2,/^[^#]/{/^#SBATCH/d;/^# *shellcheck/d;s/^# \{0,1\}//p;}' "$0"; exit 0; }   # -h: usage
 PROJECT="$(cd "${1:-.}" 2>/dev/null && pwd)" || { echo "no such folder: $1"; exit 1; }
 nwarn=0
 ok()   { printf '  \033[32mOK\033[0m    %s\n' "$*"; }

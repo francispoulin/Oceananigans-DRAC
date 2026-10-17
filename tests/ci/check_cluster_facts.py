@@ -16,6 +16,9 @@ import pathlib
 import re
 import subprocess
 import sys
+
+if sys.argv[1:2] in (["-h"], ["--help"]):
+    sys.exit(print(__doc__))
 import tempfile
 
 root = pathlib.Path(__file__).resolve().parents[2]
