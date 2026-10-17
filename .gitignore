@@ -10,3 +10,6 @@ logs/
 
 # Separate test environments (setup/setup_nccl_env.sh)
 envs/
+
+# Personal experiments next to the code, never committed (see CONTRIBUTING.md)
+local/

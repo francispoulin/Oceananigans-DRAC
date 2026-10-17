@@ -6,7 +6,7 @@ configuration, plotting environment, launcher, checks, platform tests and benchm
 repositories depend on it by convention, not as a Julia package, and dependencies point one way:
 this repository never depends on a simulation repository.
 
-Boxes are ticked in the pull request that does the work. Last updated: October 17, 2026.
+Boxes are ticked in the pull request that does the work. Last updated: October 17, 2026 (v0.1.0).
 Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 
 ## Phase 1: finish and stabilize
@@ -19,23 +19,23 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Checks and platform tests run with every rank seeing its node's GPUs (check verified on
       Rorqual, Oct 16)
 - [x] How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md)
-- [ ] Platform tests rerun with the Oct 15–16 settings
+- [ ] Platform tests rerun with the Oct 15–16 settings (all but Nibi done)
   - [x] rondeau (Oct 16: 21 passed, same answers as Oct 13)
-  - [ ] Nibi
-  - [ ] Fir
-  - [ ] Rorqual
-  - [ ] Trillium
-- [ ] Test summaries committed; `docs/drac.md` section 10 ("Tested with") updated
-- [ ] Every clone clean and set to `pull.ff only`: Nibi, Fir, Rorqual, Trillium, pelee/rondeau
-- [ ] `main` protected on GitHub (pull requests only)
+  - [ ] Nibi (queued; added in v0.1.1)
+  - [x] Fir (Oct 17)
+  - [x] Rorqual (Oct 16)
+  - [x] Trillium (Oct 17)
+- [x] Test summaries committed; `docs/drac.md` section 10 ("Tested with") updated
+- [x] Every clone clean and set to `pull.ff only`: Nibi, Fir, Rorqual, Trillium, pelee/rondeau
+- [x] `main` protected on GitHub (pull requests and the automatic checks required)
 - [x] Automatic checks on every pull request (`tests/ci/`): shell syntax, `shellcheck`, submit
       scripts' Slurm options for each cluster, links in the docs
 - [x] Repository renamed oceananigans-hpc (was Oceananigans-DRAC); `OCEAN_HPC_ROOT` replaces
       `OCEANANIGANS_DRAC_ROOT`, which is still exported until v0.3.0
-- [ ] Every clone's remote points to the new name (`git remote set-url`)
+- [x] Every clone's remote points to the new name (`git remote set-url`)
 - [ ] Each cluster fact in one place (memory per node, Trillium's rules), used by scripts and
       quoted by the docs
-- [ ] Release **v0.1.0** once all of the above pass (`version` in `Project.toml`, tag, release notes)
+- [x] Release **v0.1.0** (Oct 17): tested on Fir, Rorqual, Trillium and rondeau; Nibi in v0.1.1
 
 ## Phase 2: complete the switch of pelee and rondeau to this setup
 
