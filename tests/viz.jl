@@ -1,6 +1,6 @@
 # Test: the viz environment works: write a small NetCDF file, read it back, make a figure (PNG)
 # and a short movie (MP4) with CairoMakie, as the movie and growth scripts do. CPU only.
-# Run with:  julia --project=$OCEANANIGANS_DRAC_ROOT/viz tests/viz.jl
+# Run with:  julia --project=$OCEAN_HPC_ROOT/viz tests/viz.jl
 
 using NCDatasets, CairoMakie, Printf
 

@@ -19,7 +19,7 @@ Constraints of the distributed solvers: no split in z; Ny divisible by the numbe
 **pelee / rondeau** (strong scaling 1, 2, 4 GPUs; each run waits for the previous one):
 
 ```bash
-cd $OCEANANIGANS_DRAC_ROOT
+cd $OCEAN_HPC_ROOT
 for n in 1 2 4; do
     bash tools/run_local.sh --wait -n $n -j nh_fft_${n}gpu benchmarks/nonhydrostatic_box.jl --solver=FFT || break
 done
@@ -44,7 +44,7 @@ machine). On rondeau, NCCL made the pressure solve ~26% faster on 4 GPUs but ~5%
 (`poisson_solver.jl`). Full step, 4 GPUs:
 
 ```bash
-cd $OCEANANIGANS_DRAC_ROOT
+cd $OCEAN_HPC_ROOT
 for c in MPI NCCL; do
     bash tools/run_local.sh --wait -n 4 -p envs/nccl -j nh_FT_${c}_4gpu benchmarks/nonhydrostatic_box.jl \
         --solver=FourierTridiagonal --comm=$c --parts=true --windows=3 || break
@@ -60,7 +60,7 @@ unpack), one halo fill of u, v, w, and the rest of the step (`t_step - 3 t_solve
 and 2 GPUs shows whether the lost time is in the distributed Poisson solver or in the rest of the model.
 
 ```bash
-cd $OCEANANIGANS_DRAC_ROOT
+cd $OCEAN_HPC_ROOT
 for n in 1 2; do
     for s in FFT FourierTridiagonal; do
         bash tools/run_local.sh --wait -n $n -j nhparts_${s}_${n}gpu benchmarks/nonhydrostatic_box.jl --solver=$s --parts=true --windows=3 || break 2
@@ -83,7 +83,7 @@ compilation). On pelee/rondeau (`module load cuda/12.3.2`, done by `ocean_setup`
 `nsys`; check `which nsys`), pick free GPUs with `nvidia-smi`, then from the repository root:
 
 ```bash
-cd $OCEANANIGANS_DRAC_ROOT
+cd $OCEAN_HPC_ROOT
 export JULIA_CUDA_MEMORY_POOL=none
 NSYS="nsys profile --trace=cuda,mpi,nvtx --mpi-impl=openmpi --capture-range=cudaProfilerApi --capture-range-end=stop --force-overwrite=true"
 ARGS="--solver=FFT --profile=true --windows=1 --steps=10"
@@ -120,7 +120,7 @@ NCCL needs NCCL.jl, which is not in the main environment: make a separate test e
 (same versions as the main Manifest, plus NCCL; `envs/` is not committed):
 
 ```bash
-cd $OCEANANIGANS_DRAC_ROOT
+cd $OCEAN_HPC_ROOT
 bash setup/setup_nccl_env.sh                  # ~10 min (downloads NCCL, precompiles); ends with "OK: ... loaded"
 # on each other machine sharing the folder (e.g. rondeau), once, before multi-GPU runs:
 #   bash setup/setup_nccl_env.sh --this-machine
@@ -141,7 +141,7 @@ the whole MPI-vs-NCCL set (1 GPU; 2 and 4 GPUs on one node; 8 GPUs on 2 nodes; 1
 and weak; 17 jobs) and collect the results when they have run:
 
 ```bash
-cd $OCEANANIGANS_DRAC_ROOT
+cd $OCEAN_HPC_ROOT
 DRYRUN=1 bash jobs/submit_poisson_scaling.sh      # check the sbatch commands
 bash jobs/submit_poisson_scaling.sh               # or MAXNODES=2 for up to 8 GPUs
 grep -ah "^RESULT poisson" logs/p_*.out
@@ -166,7 +166,7 @@ does (2 per pressure solve with an x-split, 3 solves per RK3 step), at the same 
 `nonhydrostatic_box.jl`. It prints the time per transpose and the bandwidth per GPU, and checks the data.
 
 ```bash
-cd $OCEANANIGANS_DRAC_ROOT
+cd $OCEAN_HPC_ROOT
 bash tools/run_local.sh --wait -n 2 -j a2a_2gpu_own benchmarks/alltoall_bandwidth.jl
 bash tools/run_local.sh --wait -n 2 --all-visible -j a2a_2gpu_all benchmarks/alltoall_bandwidth.jl
 grep -h "^RESULT" logs/a2a_*.out

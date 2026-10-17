@@ -39,7 +39,7 @@ committed on a branch and pushed before it runs anywhere else.
 
 ```bash
 # 1. Start from an up-to-date main
-cd "$OCEANANIGANS_DRAC_ROOT"
+cd "$OCEAN_HPC_ROOT"
 git switch main && git pull
 
 # 2. Make a branch: your initials, then what it does; edit, commit
@@ -55,7 +55,7 @@ git push -u origin fjp/submit-gpu-memory
 **Testing a branch on another machine** (a cluster, or rondeau):
 
 ```bash
-cd "$OCEANANIGANS_DRAC_ROOT"
+cd "$OCEAN_HPC_ROOT"
 git fetch
 git switch fjp/submit-gpu-memory # the branch, read-only here: never commit on a cluster
 # ... run the test, look at the log ...
@@ -69,7 +69,7 @@ Jobs read the scripts when they start, so keep the branch checked out until a te
 *Merge*. Delete the branch (GitHub offers a button). Then on every machine:
 
 ```bash
-cd "$OCEANANIGANS_DRAC_ROOT" && git switch main && git pull
+cd "$OCEAN_HPC_ROOT" && git switch main && git pull
 ```
 
 If `git pull` stops with `Not possible to fast-forward`, the clone has local commits or edits:
@@ -102,10 +102,36 @@ GPUS_PER_NODE defaulted to 4 everywhere, so on Nibi a 4-GPU job asked for
 --mem=0 on half a node and sbatch refused it.
 ```
 
-## Releases
+## Versions and releases
 
-When the platform tests pass on every machine, the commit is tagged (`v2026.10`, ...) and listed in
-`docs/drac.md`, section 10 ("Tested with"). Results and upgrades refer to these tags.
+Versions follow [semantic versioning](https://semver.org): `MAJOR.MINOR.PATCH`. What counts is what
+users rely on, this repository's *public interface*: the script names and their arguments, the
+environment variables in the contract ([env/README.md](env/README.md)), the paths job scripts point
+to (`env/ocean_setup.sh`, `src/drac_mpi.jl`, `viz/`), and the package versions in `Manifest.toml`.
+
+| Bump | When | Examples |
+| --- | --- | --- |
+| PATCH (0.1.0 → 0.1.1) | Fixes and docs; nobody needs to change anything | A clearer error message; a docs correction |
+| MINOR (0.1.x → 0.2.0) | New things; the old usage still works | A new script or benchmark; a new cluster; a new optional variable |
+| MAJOR (1.x → 2.0.0) | Something users rely on changes or disappears | Renaming a script or a contract variable; a required argument; an Oceananigans upgrade that breaks user code |
+
+Before 1.0 (`0.y.z`, while the interface is still settling) a breaking change bumps the minor number
+and everything else the patch number. 1.0.0 comes once the contract for simulation repositories is
+settled (`ROADMAP.md`, Phase 3). A breaking change keeps the old way working for one minor version
+where it can, with a note saying when it goes (for example `OCEANANIGANS_DRAC_ROOT`, the variable's
+name before the repository was renamed, is exported until v0.3.0).
+
+**Making a release:**
+
+1. The platform tests pass on every machine at the commit to release; their summaries are committed.
+2. `version` in `Project.toml` and section 10 of `docs/drac.md` ("Tested with") are updated in a
+   pull request.
+3. After merging, tag `main` with an annotated tag and push it:
+   `git tag -a v0.1.0 -m "v0.1.0: ..." && git push origin v0.1.0`.
+4. On GitHub, *Releases → Draft a new release*, pick the tag and *Generate release notes* (the list
+   of merged pull requests).
+
+Results, test summaries and upgrade notes refer to these versions.
 
 ## New machines and other contributions
 

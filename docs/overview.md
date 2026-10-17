@@ -1,4 +1,4 @@
-# How Oceananigans-DRAC fits together
+# How oceananigans-hpc fits together
 
 Start here. This page explains the structure; the details are in the pages it links to.
 
@@ -48,7 +48,7 @@ All three share **one depot per machine** (`JULIA_DEPOT_PATH`), so packages are 
 compiled once. The **global environment** (`@v1.10`) stays **empty**: anything in it is visible to
 every project and hides missing dependencies.
 
-**What every environment file provides** (so scripts work on any machine): `OCEANANIGANS_DRAC_ROOT`,
+**What every environment file provides** (so scripts work on any machine): `OCEAN_HPC_ROOT`,
 `OCEAN_MACHINE`, `OCEAN_MPI_ROOT`, `OPAL_PREFIX`, `JULIA_DEPOT_PATH`, `JULIA_NUM_THREADS`,
 `JULIA_NUM_PRECOMPILE_TASKS`, and `julia` and `mpiexec` on PATH. Details: [env/README.md](../env/README.md).
 
@@ -62,7 +62,7 @@ check_env                                     # if anything seems wrong (alias f
 | Task | Alliance | pelee / rondeau |
 | --- | --- | --- |
 | Run a simulation | your project's Slurm script (sources `env/ocean_setup.sh`) | `tools/run_local.sh -n 4 scripts/run.jl ...` |
-| Make movies / plots | `sbatch $OCEANANIGANS_DRAC_ROOT/jobs/viz.sh "scripts/make_movies.jl <run>"` | `tools/run_local.sh -n 0 --viz scripts/make_movies.jl <run>` |
+| Make movies / plots | `sbatch $OCEAN_HPC_ROOT/jobs/viz.sh "scripts/make_movies.jl <run>"` | `tools/run_local.sh -n 0 --viz scripts/make_movies.jl <run>` |
 | Check the whole setup | `tools/run_tests.sh` (submits one job) | `tools/run_tests.sh` |
 | Benchmark | `jobs/benchmark.sh`, `jobs/benchmark_nh.sh` | `tools/run_local.sh ... benchmarks/nonhydrostatic_box.jl` |
 
@@ -75,9 +75,9 @@ check_env                                     # if anything seems wrong (alias f
 `check_env` aliases to `~/.bashrc`; then `bash setup/setup.sh` (this environment and system MPI),
 `bash setup/setup_viz.sh`, and `bash tools/run_tests.sh`. Commit the test summary.
 
-**A new simulation project** (once per machine): `bash $OCEANANIGANS_DRAC_ROOT/setup/configure_mpi.sh
+**A new simulation project** (once per machine): `bash $OCEAN_HPC_ROOT/setup/configure_mpi.sh
 /path/to/project`; keep `Project.toml` at the project root; add `LocalPreferences.toml` to its
-`.gitignore`; put a "Requirements: Oceananigans-DRAC" section in its README.
+`.gitignore`; put a "Requirements: oceananigans-hpc" section in its README.
 
 **A new kind of machine:** write `env/<machine>.sh` providing the variables above (copy
 `fluidsgpu.sh` for a machine without Slurm), add a case to `env/ocean_setup.sh`, then follow "a new
@@ -88,9 +88,9 @@ machine".
 1. `ocean_setup` provides the shell environment (modules, depot, MPI variables).
 2. The shared depot provides the packages (the project's own versions).
 3. `configure_mpi.sh` wrote the project's `LocalPreferences.toml` (system OpenMPI).
-4. Multi-GPU scripts load `src/drac_mpi.jl` through `ENV["OCEANANIGANS_DRAC_ROOT"]` and call
+4. Multi-GPU scripts load `src/drac_mpi.jl` through `ENV["OCEAN_HPC_ROOT"]` and call
    `drac_mpi_init()` after all `using` lines.
-5. Plotting runs with `--project=$OCEANANIGANS_DRAC_ROOT/viz`, so **plotting code must not load
+5. Plotting runs with `--project=$OCEAN_HPC_ROOT/viz`, so **plotting code must not load
    Oceananigans** (e.g. define `const days = 86400.0` rather than `using Oceananigans.Units`).
 
 ## Testing and updates

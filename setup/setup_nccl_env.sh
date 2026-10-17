@@ -3,7 +3,7 @@
 # without touching the main environment: same packages and versions as this repository's
 # Manifest, plus NCCL. Once per machine (needs internet: run it on a login node / pelee):
 #
-#     bash setup/setup_nccl_env.sh [DIR]     # default DIR: $OCEANANIGANS_DRAC_ROOT/envs/nccl
+#     bash setup/setup_nccl_env.sh [DIR]     # default DIR: $OCEAN_HPC_ROOT/envs/nccl
 #
 # Then run with it:  bash tools/run_local.sh -p envs/nccl ...  (envs/ is not committed).
 # Delete the folder to remove it; nothing else changes.
@@ -17,8 +17,9 @@
 # builds), so it may need downloading; and two MPI ranks compiling NCCL at the same time fail.
 
 set -eo pipefail
-: "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
-ROOT="$OCEANANIGANS_DRAC_ROOT"
+OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
+: "${OCEAN_HPC_ROOT:?run ocean_setup first}"
+ROOT="$OCEAN_HPC_ROOT"
 if [[ "$1" == "--this-machine" ]]; then
     DIR="${2:-$ROOT/envs/nccl}"
     [[ -f "$DIR/Project.toml" ]] || { echo "no environment in $DIR: run without --this-machine first"; exit 1; }

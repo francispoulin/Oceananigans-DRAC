@@ -21,13 +21,13 @@ using Oceananigans, CUDA, MPI, NCDatasets, JLD2
 using Oceananigans.BoundaryConditions: fill_halo_regions!
 using Libdl, Printf
 import OpenMPI_jll
-include(joinpath(ENV["OCEANANIGANS_DRAC_ROOT"], "src", "drac_mpi.jl"))
+include(joinpath(ENV["OCEAN_HPC_ROOT"], "src", "drac_mpi.jl"))
 drac_mpi_init()
 
 const comm   = MPI.COMM_WORLD
 const rank   = MPI.Comm_rank(comm)
 const nranks = MPI.Comm_size(comm)
-const refdir = get(ENV, "TEST_REF_DIR", joinpath(ENV["OCEANANIGANS_DRAC_ROOT"], "logs", "tests_ref"))
+const refdir = get(ENV, "TEST_REF_DIR", joinpath(ENV["OCEAN_HPC_ROOT"], "logs", "tests_ref"))
 const tol    = 1e-8
 rank == 0 && mkpath(refdir)
 MPI.Barrier(comm)

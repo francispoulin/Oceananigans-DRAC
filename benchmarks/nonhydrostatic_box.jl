@@ -83,7 +83,7 @@ comm_name == "NCCL" && !use_gpu && error("--comm=NCCL needs --device=GPU")
 comm_name == "NCCL" && @eval using NCCL        # loads Oceananigans' NCCL extension
 
 # Start MPI the safe way on our machines (see src/drac_mpi.jl), also for one rank.
-include(joinpath(ENV["OCEANANIGANS_DRAC_ROOT"], "src", "drac_mpi.jl"))
+include(joinpath(ENV["OCEAN_HPC_ROOT"], "src", "drac_mpi.jl"))
 drac_mpi_init()
 comm   = MPI.COMM_WORLD
 rank   = MPI.Comm_rank(comm)

@@ -3,9 +3,9 @@
 # GPUs, survives logout, and writes a log, like sbatch does on the Alliance. After ocean_setup,
 # from your project folder:
 #
-#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 4 scripts/run.jl --arg=1   # 4 GPUs, MPI
-#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 1 scripts/run.jl          # 1 GPU
-#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl  # CPU, viz
+#     bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 4 scripts/run.jl --arg=1   # 4 GPUs, MPI
+#     bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 1 scripts/run.jl          # 1 GPU
+#     bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl  # CPU, viz
 #
 # Options:
 #   -n N        number of GPUs (= MPI ranks when N > 1); 0 = CPU only. Default 1.
@@ -31,7 +31,8 @@
 # check with `nvidia-smi` if in doubt.
 
 set -eo pipefail
-: "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
+OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
+: "${OCEAN_HPC_ROOT:?run ocean_setup first}"
 
 ngpu=1; gpus=""; project="$PWD"; name=""; dry=0; wait_end=0; all_visible=0
 while [[ $# -gt 0 ]]; do
@@ -39,7 +40,7 @@ while [[ $# -gt 0 ]]; do
         -n) ngpu="$2"; shift 2 ;;
         -g) gpus="$2"; shift 2 ;;
         -p) project="$(cd "$2" && pwd)"; shift 2 ;;
-        --viz) project="$OCEANANIGANS_DRAC_ROOT/viz"; shift ;;
+        --viz) project="$OCEAN_HPC_ROOT/viz"; shift ;;
         -j) name="$2"; shift 2 ;;
         --wait) wait_end=1; shift ;;
         --all-visible) all_visible=1; shift ;;

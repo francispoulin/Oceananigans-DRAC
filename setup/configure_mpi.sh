@@ -3,7 +3,7 @@
 # and HDF5 load). For a project folder other than this repository; once per cluster, on a LOGIN
 # node (it needs internet):
 #
-#     bash /path/to/Oceananigans-DRAC/setup/configure_mpi.sh /path/to/your/project
+#     bash /path/to/oceananigans-hpc/setup/configure_mpi.sh /path/to/your/project
 #
 # It makes sure MPIPreferences, Preferences and OpenMPI_jll (4.1.10 or later in 4.1) are in the
 # project, then does steps 2 and 3 of setup/setup.sh there. It writes LocalPreferences.toml in

@@ -12,8 +12,9 @@
 # Logs: logs/hyd_*.out
 
 set -eo pipefail
-: "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
-cd "$OCEANANIGANS_DRAC_ROOT"
+OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
+: "${OCEAN_HPC_ROOT:?run ocean_setup first}"
+cd "$OCEAN_HPC_ROOT"
 source jobs/gpu_request.sh
 G="${GPUS_PER_NODE:-$(default_gpus_per_node)}"
 MAXNODES="${MAXNODES:-4}"

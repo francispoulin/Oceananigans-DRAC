@@ -29,5 +29,5 @@ gpu_request() {
 }
 
 # Logs: the repository, or $OCEAN_JOB_DIR where jobs can't write to it (Trillium: $SCRATCH).
-JOB_LOGS="${OCEAN_JOB_DIR:-${OCEANANIGANS_DRAC_ROOT:-.}}/logs"
+JOB_LOGS="${OCEAN_JOB_DIR:-${OCEAN_HPC_ROOT:-.}}/logs"
 mkdir -p "$JOB_LOGS"

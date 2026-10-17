@@ -7,6 +7,7 @@ repositories depend on it by convention, not as a Julia package, and dependencie
 this repository never depends on a simulation repository.
 
 Boxes are ticked in the pull request that does the work. Last updated: October 17, 2026.
+Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 
 ## Phase 1: finish and stabilize
 
@@ -27,11 +28,14 @@ Boxes are ticked in the pull request that does the work. Last updated: October 1
 - [ ] Test summaries committed; `docs/drac.md` section 10 ("Tested with") updated
 - [ ] Every clone clean and set to `pull.ff only`: Nibi, Fir, Rorqual, Trillium, pelee/rondeau
 - [ ] `main` protected on GitHub (pull requests only)
-- [ ] Automatic checks on every pull request (`tests/ci/`): shell syntax, `shellcheck`, submit
+- [x] Automatic checks on every pull request (`tests/ci/`): shell syntax, `shellcheck`, submit
       scripts' Slurm options for each cluster, links in the docs
+- [x] Repository renamed oceananigans-hpc (was Oceananigans-DRAC); `OCEAN_HPC_ROOT` replaces
+      `OCEANANIGANS_DRAC_ROOT`, which is still exported until v0.3.0
+- [ ] Every clone's remote points to the new name (`git remote set-url`)
 - [ ] Each cluster fact in one place (memory per node, Trillium's rules), used by scripts and
       quoted by the docs
-- [ ] Tag `v2026.10` once all of the above pass
+- [ ] Release **v0.1.0** once all of the above pass (`version` in `Project.toml`, tag, release notes)
 
 ## Phase 2: complete the switch of pelee and rondeau to this setup
 
@@ -50,6 +54,10 @@ Boxes are ticked in the pull request that does the work. Last updated: October 1
 - [x] Platform tests that simulation repositories rely on (their own regression tests live in
       those repositories)
 - [ ] Nonhydrostatic benchmark repeated with real simulation configurations
+- [ ] Simulation repositories use `OCEAN_HPC_ROOT`; then drop `OCEANANIGANS_DRAC_ROOT` (v0.3.0)
+- [ ] Trillium job folder renamed `$SCRATCH/oceananigans-hpc` (kept as `oceananigans-drac` while
+      jobs submitted before the rename are queued)
+- [ ] v1.0.0 when the contract for simulation repositories is settled
 
 ## Phase 4: a workflow for updating libraries
 
@@ -77,7 +85,6 @@ modules and the plotting stack all change independently.
 
 ## Later
 
-- [ ] Rename the repository (it now covers more than the Alliance clusters)
 - [ ] Point the Waterloo Fluids Computing Handbook's Oceananigans pages to this workflow
 - [ ] Shared depot for the group on pelee/rondeau, once several people use it
 - [ ] GPU tests on every pull request (a self-hosted runner on pelee)
