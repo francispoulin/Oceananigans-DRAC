@@ -1,0 +1,16 @@
+# Checks that need no GPUs and no Slurm, on every pull request and every push to main.
+# The same checks run locally with: bash tests/ci/run_all.sh
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax, shellcheck, submit scripts, docs links
+        run: bash tests/ci/run_all.sh

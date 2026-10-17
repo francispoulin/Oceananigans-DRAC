@@ -1,0 +1,6 @@
+# shellcheck settings for this repository (tests/ci/run_all.sh, GitHub checks).
+# SC2155 (declare and assign separately): the env files export values computed by commands that
+# cannot fail in a way we would act on; rewriting them for the linter is not worth the risk.
+disable=SC2155
+# Follow `source` statements relative to the script's own folder.
+source-path=SCRIPTDIR
