@@ -8,9 +8,9 @@ performance (that is `benchmarks/`).
 
 ```bash
 ocean_setup
-bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh                 # 1 and 4 GPUs (~10 min)
-bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh --gpus "1 2"     # if only 2 GPUs are free
-bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh --gpus "1 2 4"   # everything (~16 min)
+bash $OCEAN_HPC_ROOT/tools/run_tests.sh                 # 1 and 4 GPUs (~10 min)
+bash $OCEAN_HPC_ROOT/tools/run_tests.sh --gpus "1 2"     # if only 2 GPUs are free
+bash $OCEAN_HPC_ROOT/tools/run_tests.sh --gpus "1 2 4"   # everything (~16 min)
 ```
 
 All platform tests for one GPU count run in **one Julia process** (`tests/platform.jl`): packages are

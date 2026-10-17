@@ -2,15 +2,15 @@
 # One-time setup of the plotting environment viz/ (CairoMakie + NCDatasets), on any machine.
 # Needs internet, so on the Alliance run it on a LOGIN node. From anywhere:
 #
-#     bash /path/to/Oceananigans-DRAC/setup/setup_viz.sh
+#     bash /path/to/oceananigans-hpc/setup/setup_viz.sh
 #
 # viz/ is separate from the main (simulation) environment, so simulations never load Makie and
 # the tested simulation Manifest stays unchanged. It holds no Oceananigans and no MPI: plotting
 # scripts read the NetCDF output directly. Use it from any project folder:
 #
-#     julia --project=$OCEANANIGANS_DRAC_ROOT/viz scripts/make_movies.jl
+#     julia --project=$OCEAN_HPC_ROOT/viz scripts/make_movies.jl
 #
-# To add a package for plotting:  julia --project=$OCEANANIGANS_DRAC_ROOT/viz -e 'using Pkg; Pkg.add("X")'
+# To add a package for plotting:  julia --project=$OCEAN_HPC_ROOT/viz -e 'using Pkg; Pkg.add("X")'
 # and commit viz/Project.toml and viz/Manifest.toml.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -8,7 +8,7 @@
 
 set -o pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-export OCEANANIGANS_DRAC_ROOT="$ROOT"
+export OCEAN_HPC_ROOT="$ROOT"
 export OCEAN_JOB_DIR; OCEAN_JOB_DIR="$(mktemp -d)"     # logs/ created by gpu_request.sh go here
 cd "$ROOT" || exit 1
 fails=0

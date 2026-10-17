@@ -26,7 +26,7 @@ export OCEAN_MACHINE="${CC_CLUSTER:-alliance}"
 # OCEAN_JOB_DIR when it is set (default: this repository). Not for the Julia depot: $SCRATCH is
 # purged, and the depot only needs to be written from the login node.
 if [[ "$CC_CLUSTER" == trillium ]]; then
-    export OCEAN_JOB_DIR="${OCEAN_JOB_DIR:-$SCRATCH/oceananigans-drac}"
+    export OCEAN_JOB_DIR="${OCEAN_JOB_DIR:-$SCRATCH/oceananigans-drac}"   # old name kept: see ROADMAP.md
 fi
 
 # The system OpenMPI (the setup scripts use this, not the Alliance-specific $EBROOTOPENMPI).
@@ -37,7 +37,10 @@ export OCEAN_MPI_ROOT="$EBROOTOPENMPI"
 export OPAL_PREFIX="$OCEAN_MPI_ROOT"
 
 # Root of this repository (the folder containing env/), for scripts that need it.
-export OCEANANIGANS_DRAC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export OCEAN_HPC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Old name (until v0.3.0), for simulation repositories and ~/.bashrc lines written before the
+# repository was renamed (Oceananigans-DRAC -> oceananigans-hpc, Oct 2026). Use OCEAN_HPC_ROOT.
+export OCEANANIGANS_DRAC_ROOT="$OCEAN_HPC_ROOT"
 
 # Julia depot: where packages and compiled code are stored (about 2 GB). Not on $SCRATCH,
 # which is purged after 60 days without access. Choose another (e.g. project space) by
@@ -77,7 +80,7 @@ export JULIA_NUM_PRECOMPILE_TASKS="${JULIA_NUM_PRECOMPILE_TASKS:-2}"
 # without it (Oct 15, 2026). tools/run_local.sh sets the same on pelee/rondeau. NCCL is unaffected.
 export JULIA_CUDA_MEMORY_POOL="${JULIA_CUDA_MEMORY_POOL:-none}"
 
-echo "Oceananigans-DRAC environment (${CC_CLUSTER:-unknown cluster}): repo=$OCEANANIGANS_DRAC_ROOT, depot=$JULIA_DEPOT_PATH"
+echo "oceananigans-hpc environment (${CC_CLUSTER:-unknown cluster}): repo=$OCEAN_HPC_ROOT, depot=$JULIA_DEPOT_PATH"
 
 
 

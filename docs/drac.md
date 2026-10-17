@@ -16,7 +16,7 @@ same scripts work on all of them; only the Slurm node options differ:
 This post covers running Oceananigans on these clusters, from a first CPU job to multi-node
 GPU runs: installing packages, setting up CUDA-aware MPI, Slurm scripts, checking that the
 setup is correct, and scaling results. All the scripts are in the
-[Oceananigans-DRAC](https://github.com/francispoulin/Oceananigans-DRAC) repository, which
+[oceananigans-hpc](https://github.com/francispoulin/oceananigans-hpc) repository, which
 is tested and kept up to date. Please comment below if something doesn't work.
 
 **Three things that save time:**
@@ -38,8 +38,8 @@ is tested and kept up to date. Please comment below if something doesn't work.
 ```bash
 
 cd /project/<group>/$USER      # project space (step 2), or $HOME; not $SCRATCH, which is purged
-git clone https://github.com/francispoulin/Oceananigans-DRAC.git
-cd Oceananigans-DRAC
+git clone https://github.com/francispoulin/oceananigans-hpc.git
+cd oceananigans-hpc
 ```
 
 Tell Slurm which allocation to charge, once, in your `~/.bashrc`:
@@ -239,7 +239,7 @@ resets `OPAL_PREFIX` and is harmless otherwise:
 
 ```julia
 using Oceananigans, CUDA, NCDatasets
-include(joinpath(ENV["OCEANANIGANS_DRAC_ROOT"], "src", "drac_mpi.jl"))
+include(joinpath(ENV["OCEAN_HPC_ROOT"], "src", "drac_mpi.jl"))
 drac_mpi_init()
 
 arch = Distributed(GPU())
@@ -252,7 +252,7 @@ in this repository. That project needs the same MPI setup as step 3. Once per cl
 login node:
 
 ```bash
-bash /path/to/Oceananigans-DRAC/setup/configure_mpi.sh /path/to/your/project
+bash /path/to/oceananigans-hpc/setup/configure_mpi.sh /path/to/your/project
 ```
 
 It adds `MPIPreferences`, `Preferences` and `OpenMPI_jll` (4.1 series, 4.1.10 or later) to
@@ -264,7 +264,7 @@ precompiles. The `libmpi_path` it prints must be under `/cvmfs`. It writes
 Your job scripts then source the same environment and run Julia in your project:
 
 ```bash
-source /path/to/Oceananigans-DRAC/env/drac.sh
+source /path/to/oceananigans-hpc/env/drac.sh
 srun --cpu-bind=none julia --project=. my_simulation.jl
 ```
 
@@ -275,7 +275,7 @@ other machines, so a job script that sources `ocean_setup.sh` works unchanged el
 a project's setup (wrong folder, missing `LocalPreferences.toml`, MPI from another machine, ...):
 
 ```bash
-bash $OCEANANIGANS_DRAC_ROOT/tools/check_env.sh /path/to/your/project
+bash $OCEAN_HPC_ROOT/tools/check_env.sh /path/to/your/project
 ```
 
 ### Plotting: the `viz` environment
@@ -294,10 +294,10 @@ CairoMakie on its first use instead (several minutes, once): do that first run i
 Run plotting scripts from your project folder, in a CPU job:
 
 ```bash
-sbatch $OCEANANIGANS_DRAC_ROOT/jobs/viz.sh scripts/make_movies.jl
+sbatch $OCEAN_HPC_ROOT/jobs/viz.sh scripts/make_movies.jl
 ```
 
-or interactively with `julia --project=$OCEANANIGANS_DRAC_ROOT/viz scripts/make_movies.jl`.
+or interactively with `julia --project=$OCEAN_HPC_ROOT/viz scripts/make_movies.jl`.
 CairoMakie needs no display, and `record` writes mp4 files with its own FFMPEG.
 
 ### GPU-to-GPU communication: two settings

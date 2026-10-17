@@ -2,10 +2,10 @@
 # Check the current environment and a Julia project, and say what looks wrong. Read-only.
 # Run it in the shell you work in (after ocean_setup), from your project folder:
 #
-#     bash $OCEANANIGANS_DRAC_ROOT/tools/check_env.sh            # project = current folder
-#     bash $OCEANANIGANS_DRAC_ROOT/tools/check_env.sh /path/to/project
+#     bash $OCEAN_HPC_ROOT/tools/check_env.sh            # project = current folder
+#     bash $OCEAN_HPC_ROOT/tools/check_env.sh /path/to/project
 #
-# Handy alias:  alias check_env='bash $OCEANANIGANS_DRAC_ROOT/tools/check_env.sh'
+# Handy alias:  alias check_env='bash $OCEAN_HPC_ROOT/tools/check_env.sh'
 
 PROJECT="$(cd "${1:-.}" 2>/dev/null && pwd)" || { echo "no such folder: $1"; exit 1; }
 nwarn=0
@@ -14,12 +14,13 @@ warn() { printf '  \033[33mWARN\033[0m  %s\n' "$*"; nwarn=$((nwarn+1)); }
 info() { printf '        %s\n' "$*"; }
 
 echo "== Environment"
-if [[ -z "$OCEANANIGANS_DRAC_ROOT" ]]; then
-    warn "ocean_setup has not been sourced in this shell (OCEANANIGANS_DRAC_ROOT is empty)."
-    info "Run: source /path/to/Oceananigans-DRAC/env/ocean_setup.sh   (or your alias)"
+OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
+if [[ -z "$OCEAN_HPC_ROOT" ]]; then
+    warn "ocean_setup has not been sourced in this shell (OCEAN_HPC_ROOT is empty)."
+    info "Run: source /path/to/oceananigans-hpc/env/ocean_setup.sh   (or your alias)"
     exit 1
 fi
-ok "machine ${OCEAN_MACHINE:-?}, repository $OCEANANIGANS_DRAC_ROOT"
+ok "machine ${OCEAN_MACHINE:-?}, repository $OCEAN_HPC_ROOT"
 
 if command -v julia >/dev/null 2>&1; then
     ok "julia: $(julia --startup-file=no -e 'print(VERSION)') ($(command -v julia))"
@@ -59,7 +60,7 @@ else
 fi
 
 echo "== Project $PROJECT"
-julia --startup-file=no "$OCEANANIGANS_DRAC_ROOT/tools/check_project.jl" "$PROJECT"
+julia --startup-file=no "$OCEAN_HPC_ROOT/tools/check_project.jl" "$PROJECT"
 nwarn=$((nwarn + $?))
 
 echo

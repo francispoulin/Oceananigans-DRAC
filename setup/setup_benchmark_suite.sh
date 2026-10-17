@@ -15,8 +15,9 @@
 # Then: jobs/benchmark.sh (COMM=NCCL for NCCL) or jobs/submit_hydro_nccl.sh.
 
 set -eo pipefail
-: "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
-ROOT="$OCEANANIGANS_DRAC_ROOT"
+OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
+: "${OCEAN_HPC_ROOT:?run ocean_setup first}"
+ROOT="$OCEAN_HPC_ROOT"
 BENCH_ROOT="${BENCH_ROOT:-$SCRATCH/software/Oceananigans.jl}"
 COMMIT=8743c40d01555030bc776110ba08edee0b041e5b
 PATCH="$ROOT/setup/patches/oceananigans_benchmarking_8743c40d0.patch"
@@ -47,7 +48,7 @@ if ! grep -q "gpu_memory_in_use" "$U"; then
     sed -i 's/CUDACore\.MemoryInfo()\.pool_used_bytes/gpu_memory_in_use()/g' "$U"
     cat >> "$U" <<'JL'
 
-# Added by Oceananigans-DRAC setup/setup_benchmark_suite.sh: works with the memory pool off too.
+# Added by oceananigans-hpc setup/setup_benchmark_suite.sh: works with the memory pool off too.
 function gpu_memory_in_use()
     m = CUDACore.MemoryInfo()
     p = m.pool_used_bytes

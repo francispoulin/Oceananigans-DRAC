@@ -19,7 +19,8 @@
 #     sbatch --nodes=2 --ntasks-per-node=8 --gpus-per-node=h100:8 --mem=0 jobs/checks.sh
 
 set -eo pipefail
-: "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
+OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
+: "${OCEAN_HPC_ROOT:?run ocean_setup first}"
 [[ $# -ge 2 && "$2" =~ ^[0-9]+$ && "$2" -ge 1 ]] || {
     echo "usage: bash jobs/submit_gpu.sh <job script> <number of GPUs> [sbatch options...]"; exit 1; }
 script="$1"; n="$2"; shift 2
@@ -28,7 +29,7 @@ script="$1"; n="$2"; shift 2
     echo "no Slurm on this machine ($(hostname -s)): submit from an Alliance cluster;"
     echo "on pelee/rondeau use tools/run_local.sh instead (or DRYRUN=1 to see the sbatch command)"; exit 1; }
 
-source "$OCEANANIGANS_DRAC_ROOT/jobs/gpu_request.sh"
+source "$OCEAN_HPC_ROOT/jobs/gpu_request.sh"
 g="${GPUS_PER_NODE:-$(default_gpus_per_node)}"
 if (( n <= g )); then
     nodes=1; per_node=$n

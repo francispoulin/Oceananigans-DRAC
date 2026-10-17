@@ -1,8 +1,11 @@
-# Oceananigans-DRAC
+# oceananigans-hpc
 
 Scripts and instructions for running [Oceananigans.jl](https://github.com/CliMA/Oceananigans.jl)
 on GPUs, including multi-GPU runs with CUDA-aware MPI: on the clusters of the Digital Research
 Alliance of Canada (DRAC), and on the Waterloo fluids group's own servers.
+
+A community project, not part of [CliMA](https://github.com/CliMA). Formerly named
+Oceananigans-DRAC; old links and clones keep working.
 
 **Status:** platform tests pass on every machine below; current work and plans are in
 [ROADMAP.md](ROADMAP.md). How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -37,10 +40,10 @@ nonhydrostatic benchmarks on rondeau, platform tests on every machine above.
 **Alliance clusters** (on Trillium, from the GPU login node; see section 11 of the guide first):
 
 ```bash
-git clone https://github.com/francispoulin/Oceananigans-DRAC.git        # works for everyone
+git clone https://github.com/francispoulin/oceananigans-hpc.git        # works for everyone
 # or, if you have a GitHub SSH key set up:
-# git clone git@github.com:francispoulin/Oceananigans-DRAC.git
-cd Oceananigans-DRAC
+# git clone git@github.com:francispoulin/oceananigans-hpc.git
+cd oceananigans-hpc
 
 export SBATCH_ACCOUNT=def-yourpi     # your group's allocation
 export SALLOC_ACCOUNT=$SBATCH_ACCOUNT
@@ -54,8 +57,8 @@ bash tools/run_tests.sh              # platform tests: submits one job (~10 min)
 **pelee and rondeau** (shared drive: set up once, from either):
 
 ```bash
-git clone https://github.com/francispoulin/Oceananigans-DRAC.git
-cd Oceananigans-DRAC
+git clone https://github.com/francispoulin/oceananigans-hpc.git
+cd oceananigans-hpc
 source env/ocean_setup.sh            # every new terminal (or the ocean_setup alias below)
 bash setup/setup.sh
 bash setup/setup_viz.sh
@@ -99,8 +102,8 @@ version control. `Project.toml` and `Manifest.toml` record the tested package ve
 Add one alias to `~/.bashrc` on each machine (only the path differs):
 
 ```bash
-alias ocean_setup='source /path/to/Oceananigans-DRAC/env/ocean_setup.sh'
-alias check_env='bash $OCEANANIGANS_DRAC_ROOT/tools/check_env.sh'
+alias ocean_setup='source /path/to/oceananigans-hpc/env/ocean_setup.sh'
+alias check_env='bash $OCEAN_HPC_ROOT/tools/check_env.sh'
 ```
 
 Then, in any project folder:
@@ -108,12 +111,12 @@ Then, in any project folder:
 ```bash
 ocean_setup                     # modules, depot, MPI, for this machine
 check_env                       # anything wrong with the environment or this project?
-bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh                       # platform tests (after setup or updates)
-julia --project=$OCEANANIGANS_DRAC_ROOT/viz scripts/make_movies.jl      # plots, with viz/
+bash $OCEAN_HPC_ROOT/tools/run_tests.sh                       # platform tests (after setup or updates)
+julia --project=$OCEAN_HPC_ROOT/viz scripts/make_movies.jl      # plots, with viz/
 ```
 
-Plotting jobs on the Alliance: `sbatch $OCEANANIGANS_DRAC_ROOT/jobs/viz.sh scripts/make_movies.jl`.
-On pelee and rondeau: `bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl`.
+Plotting jobs on the Alliance: `sbatch $OCEAN_HPC_ROOT/jobs/viz.sh scripts/make_movies.jl`.
+On pelee and rondeau: `bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl`.
 
 ## Contributing
 

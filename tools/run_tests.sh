@@ -1,9 +1,9 @@
 #!/bin/bash
 # Platform sanity tests on this machine, with ONE command. After ocean_setup, from anywhere:
 #
-#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh                  # 1 and 4 GPUs (~10 min)
-#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh --gpus "1 2"      # if only 2 GPUs are free
-#     bash $OCEANANIGANS_DRAC_ROOT/tools/run_tests.sh --gpus "1 2 4"    # everything (~16 min)
+#     bash $OCEAN_HPC_ROOT/tools/run_tests.sh                  # 1 and 4 GPUs (~10 min)
+#     bash $OCEAN_HPC_ROOT/tools/run_tests.sh --gpus "1 2"      # if only 2 GPUs are free
+#     bash $OCEAN_HPC_ROOT/tools/run_tests.sh --gpus "1 2 4"    # everything (~16 min)
 #
 # 4 GPUs cover everything 2 GPUs do (with 4 ranks some have neighbours on both sides), so 2 is not
 # run by default. Most of the time is compiling each model once per process, not running it.
@@ -31,8 +31,9 @@
 # which versions), and one log per step in logs/.
 
 set -o pipefail
-: "${OCEANANIGANS_DRAC_ROOT:?run ocean_setup first}"
-ROOT="$OCEANANIGANS_DRAC_ROOT"
+OCEAN_HPC_ROOT="${OCEAN_HPC_ROOT:-${OCEANANIGANS_DRAC_ROOT:-}}"   # old name: environments set up before the rename
+: "${OCEAN_HPC_ROOT:?run ocean_setup first}"
+ROOT="$OCEAN_HPC_ROOT"
 OUT="${OCEAN_JOB_DIR:-$ROOT}"          # where logs and results are written (Trillium: $SCRATCH)
 mkdir -p "$OUT/logs" "$OUT/results/tests"
 cd "$OUT" || exit 1
@@ -154,7 +155,7 @@ if [[ $status -eq 0 ]]; then record viz CPU PASS "$secs" "$detail" "$log"; else 
 {
     echo "# Platform tests on $machine, $(date '+%F %T')"
     echo
-    echo "Oceananigans-DRAC $(git -C "$ROOT" log -1 --format='%h %s'). GPUs: $gpus."
+    echo "oceananigans-hpc $(git -C "$ROOT" log -1 --format='%h %s'). GPUs: $gpus."
     echo "**$npass passed, $nfail failed, $nskip skipped or warnings.**"
     echo
     echo "| Test | GPUs | Result | Seconds | Detail | Log |"

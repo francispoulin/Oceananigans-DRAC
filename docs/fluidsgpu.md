@@ -23,15 +23,15 @@ You source the same `env/ocean_setup.sh` on both; it picks the right file.
 pelee and rondeau share a drive, so set up once from either:
 
 ```bash
-alias ocean_setup='source /path/to/Oceananigans-DRAC/env/ocean_setup.sh'   # in ~/.bashrc
+alias ocean_setup='source /path/to/oceananigans-hpc/env/ocean_setup.sh'   # in ~/.bashrc
 ocean_setup
-cd /path/to/Oceananigans-DRAC
+cd /path/to/oceananigans-hpc
 bash setup/setup.sh            # main environment and system MPI
 bash setup/setup_viz.sh        # plotting environment
 bash tools/check_env.sh        # should end with "All checks OK."
 ```
 
-For your own project: `bash $OCEANANIGANS_DRAC_ROOT/setup/configure_mpi.sh /path/to/project`.
+For your own project: `bash $OCEAN_HPC_ROOT/setup/configure_mpi.sh /path/to/project`.
 
 `LocalPreferences.toml` holds this machine's MPI path, so a project folder used on both the
 Alliance and pelee needs a separate clone on each (the usual case: the drives are different).
@@ -42,9 +42,9 @@ Alliance and pelee needs a separate clone on each (the usual case: the drives ar
 From your project folder, after `ocean_setup`:
 
 ```bash
-bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 4 scripts/run.jl --resolution=4km    # 4 GPUs
-bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 1 scripts/run.jl                     # 1 GPU
-bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl       # plots
+bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 4 scripts/run.jl --resolution=4km    # 4 GPUs
+bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 1 scripts/run.jl                     # 1 GPU
+bash $OCEAN_HPC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.jl       # plots
 ```
 
 `run_local.sh`:
@@ -64,7 +64,7 @@ bash $OCEANANIGANS_DRAC_ROOT/tools/run_local.sh -n 0 --viz scripts/make_movies.j
 Before the first multi-GPU run, run the checks on 2 GPUs (then 4), from the repository root:
 
 ```bash
-cd $OCEANANIGANS_DRAC_ROOT
+cd $OCEAN_HPC_ROOT
 for c in single_mpi cuda_aware_mpi distributed_vs_serial output; do
     bash tools/run_local.sh --wait -n 2 -j check_$c checks/$c.jl || break
 done

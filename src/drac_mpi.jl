@@ -1,4 +1,4 @@
-# Oceananigans-DRAC: initialize MPI safely on DRAC (Digital Research Alliance of Canada) clusters.
+# oceananigans-hpc: initialize MPI safely on DRAC (Digital Research Alliance of Canada) clusters.
 #
 # Why this exists
 # ---------------
@@ -18,7 +18,7 @@
 # (for example Oceananigans' `Distributed(GPU())`):
 #
 #     using Oceananigans, CUDA, NCDatasets
-#     include(joinpath(ENV["OCEANANIGANS_DRAC_ROOT"], "src", "drac_mpi.jl"))
+#     include(joinpath(ENV["OCEAN_HPC_ROOT"], "src", "drac_mpi.jl"))
 #     drac_mpi_init()
 
 using MPI

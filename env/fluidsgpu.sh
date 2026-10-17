@@ -42,14 +42,17 @@ else
 fi
 export OPAL_PREFIX="$OCEAN_MPI_ROOT"
 
-export OCEANANIGANS_DRAC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export OCEAN_HPC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Old name (until v0.3.0), for simulation repositories and ~/.bashrc lines written before the
+# repository was renamed (Oceananigans-DRAC -> oceananigans-hpc, Oct 2026). Use OCEAN_HPC_ROOT.
+export OCEANANIGANS_DRAC_ROOT="$OCEAN_HPC_ROOT"
 export JULIA_DEPOT_PATH="${_fluids_depot:-$_fluids_default_depot}"
 export JULIA_NUM_THREADS="${JULIA_NUM_THREADS:-1}"
 export JULIA_NUM_PRECOMPILE_TASKS="${JULIA_NUM_PRECOMPILE_TASKS:-2}"
 
 unset _fluids_depot _fluids_default_depot
 
-echo "Oceananigans-DRAC environment ($OCEAN_MACHINE): repo=$OCEANANIGANS_DRAC_ROOT, depot=$JULIA_DEPOT_PATH"
+echo "oceananigans-hpc environment ($OCEAN_MACHINE): repo=$OCEAN_HPC_ROOT, depot=$JULIA_DEPOT_PATH"
 
 # Ocean data (ECCO, EN4, ETOPO, ...): a folder next to the Julia depot unless OCEAN_DATA_DIR is
 # already set. NumericalEarth reads and downloads its datasets there. Download on a login node

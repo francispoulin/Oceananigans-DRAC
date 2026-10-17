@@ -22,7 +22,7 @@
 
 using CUDA
 using Statistics, Printf
-include(joinpath(ENV["OCEANANIGANS_DRAC_ROOT"], "src", "drac_mpi.jl"))
+include(joinpath(ENV["OCEAN_HPC_ROOT"], "src", "drac_mpi.jl"))
 drac_mpi_init()
 
 comm = MPI.COMM_WORLD

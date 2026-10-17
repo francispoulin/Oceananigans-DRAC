@@ -5,7 +5,7 @@ using TOML
 
 const project = abspath(get(ARGS, 1, "."))
 const mpiroot = get(ENV, "OCEAN_MPI_ROOT", "")
-const vizdir  = joinpath(get(ENV, "OCEANANIGANS_DRAC_ROOT", ""), "viz")
+const vizdir  = joinpath(get(ENV, "OCEAN_HPC_ROOT", get(ENV, "OCEANANIGANS_DRAC_ROOT", "")), "viz")
 nwarn = 0
 ok(s)   = println("  \e[32mOK\e[0m    ", s)
 warn(s) = (global nwarn += 1; println("  \e[33mWARN\e[0m  ", s))
@@ -47,7 +47,7 @@ prefs = readtoml(joinpath(project, "LocalPreferences.toml"))
 if uses_mpi
     if prefs === nothing
         warn("no LocalPreferences.toml: MPI.jl will use its own MPI. Run once on this machine:")
-        info("bash \$OCEANANIGANS_DRAC_ROOT/setup/configure_mpi.sh $project")
+        info("bash \$OCEAN_HPC_ROOT/setup/configure_mpi.sh $project")
     else
         mp  = get(prefs, "MPIPreferences", Dict())
         lib = get(get(prefs, "OpenMPI_jll", Dict()), "libmpi_path", "")
@@ -85,9 +85,9 @@ if !is_viz
     if !isdir(vizdir)
         info("viz/ not found in the repository")
     elseif !installed
-        warn("viz/ not set up on this machine: bash \$OCEANANIGANS_DRAC_ROOT/setup/setup_viz.sh")
+        warn("viz/ not set up on this machine: bash \$OCEAN_HPC_ROOT/setup/setup_viz.sh")
     else
-        ok("viz/ is set up (plot with julia --project=\$OCEANANIGANS_DRAC_ROOT/viz ...)")
+        ok("viz/ is set up (plot with julia --project=\$OCEAN_HPC_ROOT/viz ...)")
     end
 end
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # The environment for Oceananigans on any supported machine. Source it, don't run it:
 #
-#     source /path/to/Oceananigans-DRAC/env/ocean_setup.sh
+#     source /path/to/oceananigans-hpc/env/ocean_setup.sh
 #
 # It works out which machine it is on and sources the matching file:
 #
@@ -10,7 +10,7 @@
 #
 # A convenient alias for ~/.bashrc (the same line on every machine; only the path differs):
 #
-#     alias ocean_setup='source /path/to/Oceananigans-DRAC/env/ocean_setup.sh'
+#     alias ocean_setup='source /path/to/oceananigans-hpc/env/ocean_setup.sh'
 #
 # To add a machine: write env/<machine>.sh (copy fluidsgpu.sh for a machine without Slurm)
 # and add a case below. Every env file must export the variables listed in env/README.md.

@@ -65,7 +65,7 @@ if comm_name == "NCCL"
     @eval using NCCL
 end
 
-include(joinpath(ENV["OCEANANIGANS_DRAC_ROOT"], "src", "drac_mpi.jl"))
+include(joinpath(ENV["OCEAN_HPC_ROOT"], "src", "drac_mpi.jl"))
 drac_mpi_init()
 comm   = MPI.COMM_WORLD
 rank   = MPI.Comm_rank(comm)
