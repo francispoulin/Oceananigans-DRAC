@@ -11,7 +11,7 @@
 # or submit the whole MPI-vs-NCCL set with jobs/submit_poisson_scaling.sh.
 # Settings through environment variables: SIZE (GLOBAL grid, default 512x512x256), SOLVER
 # (FourierTridiagonal | FFT), COMM (MPI | NCCL), FLOAT (Float64), REPS, WINDOWS, JULIA_ENV
-# (default envs/nccl). Fir and Rorqual: 4 GPUs per node.
+# (default envs/nccl). Slurm options for N GPUs: bash jobs/submit_gpu.sh jobs/benchmark_poisson.sh N
 #SBATCH --job-name=poisson
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1

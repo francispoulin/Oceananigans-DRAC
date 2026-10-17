@@ -1,12 +1,11 @@
 #!/bin/bash
-# Pressure solver alone at 1024^3 in Float32 (fits on ONE H100-80GB: ~38 GiB), MPI vs NCCL, on a
-# any cluster: 1, 2, 4 and 8 GPUs, on as few nodes as possible (Fir, Rorqual: 4 GPUs per node, so
-# 8 GPUs = 2 nodes; Nibi: GPUS_PER_NODE=8, so everything on one node).
+# Pressure solver alone at 1024^3 in Float32 (fits on ONE H100-80GB: ~38 GiB), MPI vs NCCL, on
+# any cluster: 1, 2, 4 and 8 GPUs, on as few nodes as possible (the GPUs per node come from
+# jobs/gpu_request.sh: 8 GPUs are one node on Nibi, two elsewhere).
 # Strong scaling only (same 1024^3 grid on all). From the repository root, on a login node, after
 # ocean_setup and bash setup/setup_nccl_env.sh (once per cluster):
 #
-#     bash jobs/submit_poisson_1024.sh                    # Fir, Rorqual (7 jobs)
-#     GPUS_PER_NODE=8 bash jobs/submit_poisson_1024.sh    # Nibi (7 jobs, all on one node)
+#     bash jobs/submit_poisson_1024.sh                    # 7 jobs
 #     MAXNODES=1 bash jobs/submit_poisson_1024.sh         # one node only (Fir: 1, 2, 4 GPUs; 5 jobs)
 #     DRYRUN=1 bash jobs/submit_poisson_1024.sh        # show the sbatch commands only
 #

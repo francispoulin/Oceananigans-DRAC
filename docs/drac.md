@@ -6,12 +6,15 @@ The Digital Research Alliance of Canada (DRAC) runs several national GPU cluster
 NVIDIA H100 80 GB GPUs, a common software stack (`/cvmfs`, `StdEnv/2023`) and Slurm. The
 same scripts work on all of them; only the Slurm node options differ:
 
-| Cluster | GPUs per node | A full node |
+| Cluster | GPUs per node | Slurm options |
 | --- | --- | --- |
-| [Nibi](https://docs.alliancecan.ca/wiki/Nibi) | 8 | `--ntasks-per-node=8 --mem=0` |
-| [Fir](https://docs.alliancecan.ca/wiki/Fir) | 4 | `--ntasks-per-node=4 --mem=0` |
-| [Rorqual](https://docs.alliancecan.ca/wiki/Rorqual) | 4 | `--ntasks-per-node=4 --mem=0` |
-| [Trillium](https://docs.alliancecan.ca/wiki/Trillium_Quickstart) (GPU) | 4 | `--gpus-per-node=4 --ntasks-per-node=4` (see section 11) |
+| [Nibi](https://docs.alliancecan.ca/wiki/Nibi) | 8 | step 6 |
+| [Fir](https://docs.alliancecan.ca/wiki/Fir) | 4 | step 6 |
+| [Rorqual](https://docs.alliancecan.ca/wiki/Rorqual) | 4 | step 6 |
+| [Trillium](https://docs.alliancecan.ca/wiki/Trillium_Quickstart) (GPU) | 4 | section 11 (1 GPU or whole nodes) |
+
+`jobs/submit_gpu.sh` chooses these options for you; `jobs/gpu_request.sh` is the one place where
+they are written, and an automatic check keeps the tables in this guide in line with it.
 
 This post covers running Oceananigans on these clusters, from a first CPU job to multi-node
 GPU runs: installing packages, setting up CUDA-aware MPI, Slurm scripts, checking that the

@@ -50,27 +50,27 @@ done
 maxgpu=$(tr ' ' '\n' <<<"$gpus" | sort -n | tail -1)
 
 # ---- Alliance: submit everything as one job, then stop ----
+# DRYRUN=1 prints the sbatch command without precompiling or submitting (tests/ci uses it).
 slurm=0
-[[ -n "$CC_CLUSTER" ]] && command -v sbatch >/dev/null && slurm=1
+[[ -n "$CC_CLUSTER" ]] && { command -v sbatch >/dev/null || [[ -n "$DRYRUN" ]]; } && slurm=1
 if [[ $slurm -eq 1 && $in_job -eq 0 && -z "$SLURM_JOB_ID" ]]; then
+    # The GPU, memory and node rules of each cluster live in jobs/gpu_request.sh only.
+    source "$ROOT/jobs/gpu_request.sh"
+    pernode=$(default_gpus_per_node)
+    (( maxgpu > pernode )) && { echo "$CC_CLUSTER: at most $pernode GPUs (one node) for the tests"; exit 1; }
+    gpu_request "$maxgpu" 128G
+    res=(--ntasks-per-node="$maxgpu" "${GPU_OPTS[@]}")
+    # Trillium allocates whole GPUs with their cores; elsewhere 4 cores per rank. Same limits as before.
+    if [[ "$CC_CLUSTER" == trillium ]]; then res+=(--time=0:30:00); else res+=(--cpus-per-task=4 --time=1:00:00); fi
+    cmd=(sbatch --job-name=tests --nodes=1 "${res[@]}" --output="$OUT/logs/tests_%j.out"
+         --export=ALL "$ROOT/tools/run_tests.sh" --in-job --gpus "$gpus")
+    if [[ -n "$DRYRUN" ]]; then echo "${cmd[*]}"; exit 0; fi
     # Precompile on the login node: compute nodes may not be able to write to the depot (Trillium).
     echo "Precompiling (login node; quick if nothing changed)..."
     { julia --project="$ROOT" -e 'using Pkg; Pkg.precompile()' &&
       julia --project="$ROOT/viz" -e 'using Pkg; Pkg.precompile()'; } \
         > "logs/tests_precompile_$(date +%Y%m%d-%H%M).out" 2>&1 || echo "WARNING: precompile failed (see logs/)"
-    if [[ "$CC_CLUSTER" == trillium ]]; then
-        # Only 1 GPU or whole nodes (4 GPUs); memory requests are ignored; no partition given.
-        ng=$(( maxgpu <= 1 ? 1 : 4 ))
-        (( maxgpu > 4 )) && { echo "Trillium: at most 4 GPUs (one node) for the tests"; exit 1; }
-        res=(--gpus-per-node="$ng" --ntasks-per-node="$ng" --time=0:30:00)
-    else
-        # All of the node's requested GPUs visible to every rank (jobs/gpu_request.sh), as in production.
-        source "$ROOT/jobs/gpu_request.sh"
-        gpu_request "$maxgpu" 128G
-        res=(--ntasks-per-node="$maxgpu" "${GPU_OPTS[@]}" --cpus-per-task=4 --time=1:00:00)
-    fi
-    sbatch --job-name=tests --nodes=1 "${res[@]}" --output="$OUT/logs/tests_%j.out" \
-           --export=ALL "$ROOT/tools/run_tests.sh" --in-job --gpus "$gpus"
+    "${cmd[@]}"
     echo "Submitted. When it ends: cat $OUT/logs/tests_<jobid>.out; summary in $OUT/results/tests/."
     exit 0
 fi

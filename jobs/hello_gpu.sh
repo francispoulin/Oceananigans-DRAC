@@ -2,8 +2,9 @@
 # Second test: Oceananigans on one GPU. From the repository root:
 #     sbatch jobs/hello_gpu.sh
 #SBATCH --job-name=hello_gpu
-#SBATCH --ntasks=1
-#SBATCH --gpus-per-task=h100:1
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --gpus-per-node=h100:1      # per node, never --gpus-per-task (see jobs/gpu_request.sh)
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=0:30:00

@@ -33,8 +33,8 @@ Versions: see [CONTRIBUTING.md](CONTRIBUTING.md#versions-and-releases).
 - [x] Repository renamed oceananigans-hpc (was Oceananigans-DRAC); `OCEAN_HPC_ROOT` replaces
       `OCEANANIGANS_DRAC_ROOT`, which is still exported until v0.3.0
 - [x] Every clone's remote points to the new name (`git remote set-url`)
-- [ ] Each cluster fact in one place (memory per node, Trillium's rules), used by scripts and
-      quoted by the docs
+- [x] Each cluster fact in one place: `jobs/gpu_request.sh` (GPUs per node, memory, Trillium's
+      rules), used by every script; the docs' tables are checked against it automatically
 - [x] Release **v0.1.0** (Oct 17): tested on Fir, Rorqual, Trillium and rondeau; Nibi in v0.1.1
 
 ## Phase 2: complete the switch of pelee and rondeau to this setup
